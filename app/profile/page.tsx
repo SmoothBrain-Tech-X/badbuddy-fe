@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -14,19 +13,15 @@ import {
     Tabs,
     Stack,
     Box,
-    ThemeIcon,
     Paper,
     Title,
     ActionIcon,
-    rem,
 } from '@mantine/core';
 import {
     IconMapPin,
-    IconUsers,
     IconEdit,
     IconTrophy,
     IconCalendarEvent,
-    IconSettings,
     IconStar,
     IconMessageCircle,
     IconHeart,
@@ -34,24 +29,24 @@ import {
 } from '@tabler/icons-react';
 
 const ProfilePage = () => {
-    const [activeTab, setActiveTab] = useState('hosted');
+    const [activeTab, setActiveTab] = useState<string | null>('hosted');
 
     const userData = {
-        name: "John Doe",
-        avatar: "/api/placeholder/128/128",
-        level: "Intermediate",
-        location: "Bangkok, Thailand",
-        joinDate: "Member since Sep 2023",
+        name: 'John Doe',
+        avatar: '/api/placeholder/128/128',
+        level: 'Intermediate',
+        location: 'Bangkok, Thailand',
+        joinDate: 'Member since Sep 2023',
         stats: {
             hosted: 15,
             joined: 45,
             followers: 128,
-            following: 89
+            following: 89,
         },
         badges: [
-            { label: "Top Host", color: "yellow", icon: <IconTrophy size={12} /> },
-            { label: "Verified", color: "blue", icon: <IconStar size={12} /> }
-        ]
+            { label: 'Top Host', color: 'yellow', icon: <IconTrophy size={12} /> },
+            { label: 'Verified', color: 'blue', icon: <IconStar size={12} /> },
+        ],
     };
 
     const parties = [
@@ -61,7 +56,7 @@ const ProfilePage = () => {
             location: 'Sports Complex A',
             time: 'Sep 18, 2024 16:00 - 18:00',
             participants: { current: 8, max: 10 },
-            status: 'upcoming'
+            status: 'upcoming',
         },
         {
             id: '2',
@@ -69,8 +64,8 @@ const ProfilePage = () => {
             location: 'Central Stadium',
             time: 'Sep 20, 2024 14:00 - 16:00',
             participants: { current: 6, max: 8 },
-            status: 'upcoming'
-        }
+            status: 'upcoming',
+        },
     ];
 
     return (
@@ -82,7 +77,7 @@ const ProfilePage = () => {
                         <Stack>
                             {/* Profile Card */}
                             <Card shadow="sm" radius="md" withBorder>
-                                <Stack align="center" spacing="xs">
+                                <Stack align="center">
                                     <Box pos="relative">
                                         <Avatar
                                             src={userData.avatar}
@@ -127,8 +122,6 @@ const ProfilePage = () => {
                                     {[
                                         { label: 'Hosted', value: userData.stats.hosted },
                                         { label: 'Joined', value: userData.stats.joined },
-                                        { label: 'Followers', value: userData.stats.followers },
-                                        { label: 'Following', value: userData.stats.following }
                                     ].map((stat, index) => (
                                         <Grid.Col span={6} key={index}>
                                             <Paper p="md" radius="md" ta="center" withBorder>
@@ -155,27 +148,13 @@ const ProfilePage = () => {
                                 </Group>
                             </Card>
 
-                            {/* Settings Card */}
-                            <Card shadow="sm" radius="md" withBorder>
-                                <Group mb="md">
-                                    <ThemeIcon size="lg" radius="md" variant="light" color="blue">
-                                        <IconSettings size={rem(20)} />
-                                    </ThemeIcon>
-                                    <Title order={3}>Quick Settings</Title>
-                                </Group>
-                                <Stack>
-                                    <Button variant="light" fullWidth>Edit Profile</Button>
-                                    <Button variant="light" fullWidth>Privacy Settings</Button>
-                                    <Button variant="light" fullWidth>Notification Settings</Button>
-                                </Stack>
-                            </Card>
                         </Stack>
                     </Grid.Col>
 
                     {/* Main Content */}
                     <Grid.Col span={{ base: 12, md: 8 }}>
                         <Card shadow="sm" radius="md" withBorder>
-                            <Tabs value={activeTab} onChange={setActiveTab}>
+                            <Tabs value={activeTab} onChange={(value) => setActiveTab(value)}>
                                 <Tabs.List>
                                     <Tabs.Tab
                                         value="hosted"
@@ -204,7 +183,8 @@ const ProfilePage = () => {
                                                         </Group>
                                                     </div>
                                                     <Badge color="blue">
-                                                        {party.participants.current}/{party.participants.max} joined
+                                                        {party.participants.current}/
+                                                        {party.participants.max} joined
                                                     </Badge>
                                                 </Group>
                                                 <Group mt="md" justify="space-between">
