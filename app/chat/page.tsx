@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import {
-    Container, Grid, Card, Group, Text, Badge, Button, Avatar,
-    Stack, Box, TextInput, Paper, Title, ActionIcon,
+    Container, Grid, Paper, Group, Text, Badge, Button, Avatar,
+    Stack, Box, TextInput, Title, ActionIcon,
     ScrollArea, Divider, Menu, Select, Center
 } from '@mantine/core';
 import {
@@ -44,85 +44,247 @@ interface ChatState {
     selectedChat: string | null;
     messageInput: string;
     filterType: FilterType | null;
+    contacts: ChatContact[];
+    messages: Record<string, ChatMessage[]>;
 }
 
-// Mock Data
-const initialContacts: ChatContact[] = [
-    {
-        id: '1',
-        name: 'John Doe',
-        avatar: '/api/placeholder/32/32',
-        lastMessage: 'See you at the court!',
-        timestamp: '12:30 PM',
-        unread: 2,
-        online: true,
-        isPinned: true,
-        type: 'user'
-    },
-    {
-        id: '2',
-        name: 'Sports Complex A',
-        avatar: '/api/placeholder/32/32',
-        lastMessage: 'Your booking is confirmed.',
-        timestamp: 'Yesterday',
-        unread: 0,
-        online: true,
-        isPinned: true,
-        type: 'venue'
-    },
-    {
-        id: '3',
-        name: 'Jane Smith',
-        avatar: '/api/placeholder/32/32',
-        lastMessage: 'Looking forward to playing together',
-        timestamp: '2 days ago',
-        unread: 0,
-        online: false,
-        isPinned: false,
-        type: 'user'
-    },
-];
+// WebSocket hook
+const useWebSocket = () => {
+    const [isConnected, setIsConnected] = useState(false);
+    const wsRef = useRef<WebSocket | null>(null);
+    const messageHandlersRef = useRef<Record<string, (payload: any) => void>>({});
 
-const initialMessages: Record<string, ChatMessage[]> = {
-    '1': [
-        {
-            id: '1',
-            content: 'Hey! Are we still on for badminton today?',
-            timestamp: '12:00 PM',
-            isOwn: false,
-            status: 'read',
-            type: 'text'
-        },
-        {
-            id: '2',
-            content: 'Yes, I willl be there at 4 PM',
-            timestamp: '12:05 PM',
-            isOwn: true,
-            status: 'read',
-            type: 'text'
-        },
-        {
-            id: '3',
-            content: 'Great! See you at the court!',
-            timestamp: '12:30 PM',
-            isOwn: false,
-            status: 'read',
-            type: 'text'
+    useEffect(() => {
+        wsRef.current = new WebSocket('ws://localhost:8080/ws');
+
+        wsRef.current.onopen = () => {
+            setIsConnected(true);
+            console.log('WebSocket connected');
+        };
+
+        wsRef.current.onclose = () => {
+            setIsConnected(false);
+            console.log('WebSocket disconnected');
+            // Attempt to reconnect after 5 seconds
+            setTimeout(() => {
+                if (wsRef.current?.readyState === WebSocket.CLOSED) {
+                    wsRef.current = new WebSocket('ws://localhost:8080/ws');
+                }
+            }, 5000);
+        };
+
+        wsRef.current.onmessage = (event) => {
+            try {
+                const { type, payload } = JSON.parse(event.data);
+                const handler = messageHandlersRef.current[type];
+                if (handler) {
+                    handler(payload);
+                }
+            } catch (error) {
+                console.error('Error processing message:', error);
+            }
+        };
+
+        return () => {
+            wsRef.current?.close();
+        };
+    }, []);
+
+    const sendMessage = useCallback((type: string, payload: any) => {
+        if (wsRef.current?.readyState === WebSocket.OPEN) {
+            wsRef.current.send(JSON.stringify({ type, payload }));
         }
-    ],
-    '2': [
-        {
-            id: '1',
-            content: 'Booking Confirmation: Court 3, September 18, 2024, 16:00-18:00',
-            timestamp: '10:00 AM',
-            isOwn: false,
-            status: 'read',
-            type: 'system'
-        }
-    ]
+    }, []);
+
+    const addMessageHandler = useCallback((type: string, handler: (payload: any) => void) => {
+        messageHandlersRef.current[type] = handler;
+    }, []);
+
+    return {
+        isConnected,
+        sendMessage,
+        addMessageHandler
+    };
 };
 
 // Components
+// (Previous ContactList, MessageList, and ChatHeader components remain the same)
+
+// Main Component
+const ChatInterface = () => {
+    // State
+    const [state, setState] = useState<ChatState>({
+        searchQuery: '',
+        selectedChat: null,
+        messageInput: '',
+        filterType: 'all',
+        contacts: [],
+        messages: {}
+    });
+
+    const { isConnected, sendMessage, addMessageHandler } = useWebSocket();
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        // Register message handlers
+        addMessageHandler('contacts', (contacts: ChatContact[]) => {
+            setState(prev => ({ ...prev, contacts }));
+        });
+
+        addMessageHandler('chat_messages', (messages: ChatMessage[]) => {
+            setState(prev => ({
+                ...prev,
+                messages: {
+                    ...prev.messages,
+                    [prev.selectedChat!]: messages
+                }
+            }));
+        });
+
+        addMessageHandler('new_message', (message: ChatMessage) => {
+            setState(prev => {
+                const chatId = prev.selectedChat!;
+                const currentMessages = prev.messages[chatId] || [];
+                return {
+                    ...prev,
+                    messages: {
+                        ...prev.messages,
+                        [chatId]: [...currentMessages, message]
+                    }
+                };
+            });
+            // Scroll to bottom on new message
+            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        });
+
+        // Request initial data
+        sendMessage('get_contacts', null);
+    }, [addMessageHandler, sendMessage]);
+
+    // Handlers
+    const handleSearchChange = useCallback((query: string) => {
+        setState(prev => ({ ...prev, searchQuery: query }));
+    }, []);
+
+    const handleFilterChange = useCallback((filter: FilterType | null) => {
+        setState(prev => ({ ...prev, filterType: filter }));
+    }, []);
+
+    const handleContactSelect = useCallback((chatId: string) => {
+        setState(prev => ({ ...prev, selectedChat: chatId }));
+        sendMessage('get_messages', chatId);
+    }, [sendMessage]);
+
+    const handleMessageChange = useCallback((message: string) => {
+        setState(prev => ({ ...prev, messageInput: message }));
+    }, []);
+
+    const handleSendMessage = useCallback(() => {
+        if (!state.messageInput.trim() || !state.selectedChat) return;
+
+        sendMessage('send_message', {
+            content: state.messageInput,
+            chatId: state.selectedChat
+        });
+
+        setState(prev => ({ ...prev, messageInput: '' }));
+    }, [state.messageInput, state.selectedChat, sendMessage]);
+
+    // Handlers for keyboard events
+    const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSendMessage();
+        }
+    }, [handleSendMessage]);
+
+    // Connection status display
+    const ConnectionStatus = () => (
+        <Badge
+            color={isConnected ? 'green' : 'red'}
+            variant="dot"
+            size="sm"
+            style={{ position: 'fixed', top: 20, right: 20 }}
+        >
+            {isConnected ? 'Connected' : 'Disconnected'}
+        </Badge>
+    );
+
+    return (
+        <Box bg="gray.0" mih="100vh">
+            <ConnectionStatus />
+            <Container size="xl" py="xl">
+                <Paper radius="md" withBorder>
+                    <Grid h={700} style={{ overflow: 'hidden' }}>
+                        {/* Left sidebar with contacts */}
+                        <Grid.Col span={{ base: 12, sm: 4 }} p={0} style={{ borderRight: '1px solid var(--mantine-color-gray-3)' }}>
+                            <ContactList
+                                contacts={state.contacts}
+                                selectedChat={state.selectedChat}
+                                searchQuery={state.searchQuery}
+                                filterType={state.filterType}
+                                onContactSelect={handleContactSelect}
+                                onSearchChange={handleSearchChange}
+                                onFilterChange={handleFilterChange}
+                            />
+                        </Grid.Col>
+
+                        {/* Main chat area */}
+                        <Grid.Col span={{ base: 12, sm: 8 }} p={0}>
+                            {state.selectedChat ? (
+                                <Stack h="100%" >
+                                    <ChatHeader
+                                        contact={state.contacts.find(c => c.id === state.selectedChat)}
+                                    />
+                                    <ScrollArea h="100%" type="scroll">
+                                        <MessageList
+                                            messages={state.messages[state.selectedChat] || []}
+                                        />
+                                        <div ref={messagesEndRef} />
+                                    </ScrollArea>
+                                    <Box p="md" style={{ borderTop: '1px solid var(--mantine-color-gray-3)' }}>
+                                        <Group>
+                                            <ActionIcon variant="subtle">
+                                                <IconPaperclip size={16} />
+                                            </ActionIcon>
+                                            <TextInput
+                                                placeholder="Type a message..."
+                                                value={state.messageInput}
+                                                onChange={(e) => handleMessageChange(e.currentTarget.value)}
+                                                onKeyPress={handleKeyPress}
+                                                style={{ flex: 1 }}
+                                                rightSection={
+                                                    <ActionIcon variant="subtle">
+                                                        <IconMoodSmile size={16} />
+                                                    </ActionIcon>
+                                                }
+                                            />
+                                            <Button
+                                                disabled={!state.messageInput.trim() || !isConnected}
+                                                rightSection={<IconSend size={16} />}
+                                                onClick={handleSendMessage}
+                                            >
+                                                Send
+                                            </Button>
+                                        </Group>
+                                    </Box>
+                                </Stack>
+                            ) : (
+                                <Center h="100%">
+                                    <Text c="dimmed">Select a chat to start messaging</Text>
+                                </Center>
+                            )}
+                        </Grid.Col>
+                    </Grid>
+                </Paper>
+            </Container>
+        </Box>
+    );
+};
+
+export default ChatInterface;
+
+// ContactList Component
 const ContactList: React.FC<{
     contacts: ChatContact[];
     selectedChat: string | null;
@@ -153,7 +315,7 @@ const ContactList: React.FC<{
             });
 
         return (
-            <Stack h="100%" spacing={0}>
+            <Stack h="100%" >
                 <Box p="md" style={{ borderBottom: '1px solid var(--mantine-color-gray-3)' }}>
                     <Stack gap="sm">
                         <Group justify="space-between">
@@ -170,7 +332,7 @@ const ContactList: React.FC<{
                         />
                         <Select
                             value={filterType}
-                            onChange={onFilterChange}
+                            onChange={(value) => onFilterChange(value as FilterType | null)}
                             data={[
                                 { value: 'all', label: 'All Messages' },
                                 { value: 'users', label: 'Players' },
@@ -182,7 +344,7 @@ const ContactList: React.FC<{
                 </Box>
 
                 <ScrollArea h="100%" type="scroll">
-                    <Stack spacing={0}>
+                    <Stack >
                         {filteredContacts.map((contact) => (
                             <Box
                                 key={contact.id}
@@ -244,6 +406,7 @@ const ContactList: React.FC<{
         );
     };
 
+// MessageList Component
 const MessageList: React.FC<{ messages: ChatMessage[] }> = ({ messages }) => (
     <Stack p="md" gap="xs">
         {messages.map((message) => (
@@ -271,14 +434,18 @@ const MessageList: React.FC<{ messages: ChatMessage[] }> = ({ messages }) => (
                         radius="md"
                     >
                         <Text size="sm">{message.content}</Text>
-                        <Text
-                            size="xs"
-                            ta="right"
-                            style={{ opacity: 0.7 }}
-                            mt={4}
-                        >
-                            {message.timestamp}
-                        </Text>
+                        <Group mt={4}>
+                            <Text size="xs" style={{ opacity: 0.7 }}>
+                                {message.timestamp}
+                            </Text>
+                            {message.isOwn && (
+                                <Text size="xs" style={{ opacity: 0.7 }}>
+                                    {message.status === 'sent' && '✓'}
+                                    {message.status === 'delivered' && '✓✓'}
+                                    {message.status === 'read' && '✓✓'}
+                                </Text>
+                            )}
+                        </Group>
                     </Paper>
                 )}
             </Box>
@@ -286,6 +453,7 @@ const MessageList: React.FC<{ messages: ChatMessage[] }> = ({ messages }) => (
     </Stack>
 );
 
+// ChatHeader Component
 const ChatHeader: React.FC<{ contact: ChatContact | undefined }> = ({ contact }) => (
     <Box p="md" style={{ borderBottom: '1px solid var(--mantine-color-gray-3)' }}>
         <Group justify="space-between">
@@ -325,104 +493,3 @@ const ChatHeader: React.FC<{ contact: ChatContact | undefined }> = ({ contact })
         </Group>
     </Box>
 );
-
-// Main Component
-const ChatInterface = () => {
-    // State
-    const [state, setState] = useState<ChatState>({
-        searchQuery: '',
-        selectedChat: '1',
-        messageInput: '',
-        filterType: 'all'
-    });
-
-    // Handlers
-    const handleSearchChange = useCallback((query: string) => {
-        setState(prev => ({ ...prev, searchQuery: query }));
-    }, []);
-
-    const handleFilterChange = useCallback((filter: FilterType | null) => {
-        setState(prev => ({ ...prev, filterType: filter }));
-    }, []);
-
-    const handleContactSelect = useCallback((chatId: string) => {
-        setState(prev => ({ ...prev, selectedChat: chatId }));
-    }, []);
-
-    const handleMessageChange = useCallback((message: string) => {
-        setState(prev => ({ ...prev, messageInput: message }));
-    }, []);
-
-    const handleSendMessage = useCallback(() => {
-        // Implement send message logic
-        setState(prev => ({ ...prev, messageInput: '' }));
-    }, []);
-
-    // Derived state
-    const selectedContact = initialContacts.find(contact => contact.id === state.selectedChat);
-    const currentMessages = state.selectedChat ? initialMessages[state.selectedChat] : [];
-
-    return (
-        <Box bg="gray.0" mih="100vh">
-            <Container size="xl" py="xl">
-                <Paper radius="md" withBorder>
-                    <Grid h={700} style={{ overflow: 'hidden' }}>
-                        <Grid.Col span={{ base: 12, sm: 4 }} p={0} style={{ borderRight: '1px solid var(--mantine-color-gray-3)' }}>
-                            <ContactList
-                                contacts={initialContacts}
-                                selectedChat={state.selectedChat}
-                                searchQuery={state.searchQuery}
-                                filterType={state.filterType}
-                                onContactSelect={handleContactSelect}
-                                onSearchChange={handleSearchChange}
-                                onFilterChange={handleFilterChange}
-                            />
-                        </Grid.Col>
-
-                        <Grid.Col span={{ base: 12, sm: 8 }} p={0}>
-                            {state.selectedChat ? (
-                                <Stack h="100%" spacing={0}>
-                                    <ChatHeader contact={selectedContact} />
-                                    <ScrollArea h="100%" type="scroll">
-                                        <MessageList messages={currentMessages} />
-                                    </ScrollArea>
-                                    <Box p="md" style={{ borderTop: '1px solid var(--mantine-color-gray-3)' }}>
-                                        <Group>
-                                            <ActionIcon variant="subtle">
-                                                <IconPaperclip size={16} />
-                                            </ActionIcon>
-                                            <TextInput
-                                                placeholder="Type a message..."
-                                                value={state.messageInput}
-                                                onChange={(e) => handleMessageChange(e.currentTarget.value)}
-                                                style={{ flex: 1 }}
-                                                rightSection={
-                                                    <ActionIcon variant="subtle">
-                                                        <IconMoodSmile size={16} />
-                                                    </ActionIcon>
-                                                }
-                                            />
-                                            <Button
-                                                disabled={!state.messageInput.trim()}
-                                                rightSection={<IconSend size={16} />}
-                                                onClick={handleSendMessage}
-                                            >
-                                                Send
-                                            </Button>
-                                        </Group>
-                                    </Box>
-                                </Stack>
-                            ) : (
-                                <Center h="100%">
-                                    <Text c="dimmed">Select a chat to start messaging</Text>
-                                </Center>
-                            )}
-                        </Grid.Col>
-                    </Grid>
-                </Paper>
-            </Container>
-        </Box>
-    );
-};
-
-export default ChatInterface;

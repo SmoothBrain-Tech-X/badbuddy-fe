@@ -1,5 +1,5 @@
 import { Stack, Progress, Group, Text, Badge } from '@mantine/core';
-import type { PasswordStrength } from '../register';
+import type { PasswordStrength } from '@/services';
 import { getPasswordStrengthColor } from '../utils/passwordUtils';
 
 interface PasswordStrengthIndicatorProps {

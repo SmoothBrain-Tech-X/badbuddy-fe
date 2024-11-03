@@ -3,8 +3,10 @@ import '@mantine/dates/styles.css';
 
 import React from 'react';
 import { ColorSchemeScript, MantineProvider } from '@mantine/core';
+import { Toaster } from 'react-hot-toast';
 import { theme } from '../theme';
 import MainProvider from '@/providers/MainProvider';
+import { AuthProvider } from '@/providers/AuthProvider';
 
 export const metadata = {
   title: 'Badbuddy',
@@ -25,7 +27,17 @@ export default function RootLayout({ children }: { children: any }) {
       <body>
         <MantineProvider theme={theme}>
           <MainProvider>
-            {children}
+            <AuthProvider>
+              <Toaster
+                position="top-right"
+                toastOptions={{
+                  duration: 3000,
+                  loading: {
+                    duration: Infinity,
+                  },
+                }}
+              />
+              {children}</AuthProvider>
           </MainProvider>
         </MantineProvider>
       </body>

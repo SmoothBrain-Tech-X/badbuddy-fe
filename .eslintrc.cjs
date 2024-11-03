@@ -1,5 +1,4 @@
 module.exports = {
-  extends: ['mantine', 'plugin:@next/next/recommended', 'plugin:jest/recommended'],
   plugins: ['testing-library', 'jest'],
   overrides: [
     {
@@ -51,6 +50,8 @@ module.exports = {
       }
     ],
     'strict': 'off',                          // ไม่บังคับเรื่อง strict mode
-    'lines-between-class-members': 'warn'      // แค่เตือนเรื่องบรรทัดว่างระหว่าง class members
+    'lines-between-class-members': 'warn',    // แค่เตือนเรื่องบรรทัดว่างระหว่าง class members
+
+    'max-classes-per-file': 'off',
   }
 };

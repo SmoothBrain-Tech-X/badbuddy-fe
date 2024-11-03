@@ -1,10 +1,10 @@
 import { Card, Stack, Radio, Button } from '@mantine/core';
-import type { FormData } from '../register';
+import type { RegisterFormData } from '@/services';
 
 interface PreferencesStepProps {
-    formData: FormData;
+    formData: RegisterFormData;
     loading: boolean;
-    onInputChange: (key: keyof FormData, value: string) => void;
+    onInputChange: (key: keyof RegisterFormData, value: string) => void;
     onSubmit: (e: React.FormEvent) => void;
 }
 
@@ -14,17 +14,16 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
     onInputChange,
     onSubmit,
 }) => (
-    <Card shadow="md" radius="md" className="p-4 sm:p-8 mt-6" withBorder>
+    <Card shadow="md" radius="md" p="xl" mt="md" withBorder>
         <form onSubmit={onSubmit}>
-            <Stack className="space-y-4 sm:space-y-6">
+            <Stack>
                 <Radio.Group
                     label="Skill Level"
                     required
                     value={formData.level}
                     onChange={(value) => onInputChange('level', value)}
-                    className="text-sm sm:text-base"
                 >
-                    <Stack className="mt-2 space-y-2 sm:space-y-3">
+                    <Stack mt="xs">
                         <Radio value="beginner" label="Beginner" />
                         <Radio value="intermediate" label="Intermediate" />
                         <Radio value="advanced" label="Advanced" />
@@ -36,9 +35,8 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
                     required
                     value={formData.playingHand}
                     onChange={(value) => onInputChange('playingHand', value)}
-                    className="text-sm sm:text-base"
                 >
-                    <Stack className="mt-2 space-y-2 sm:space-y-3">
+                    <Stack mt="xs">
                         <Radio value="right" label="Right Hand" />
                         <Radio value="left" label="Left Hand" />
                     </Stack>
@@ -47,7 +45,7 @@ export const PreferencesStep: React.FC<PreferencesStepProps> = ({
                 <Button
                     type="submit"
                     loading={loading}
-                    className="mt-4 text-sm sm:text-base"
+                    mt="md"
                 >
                     Complete Registration
                 </Button>

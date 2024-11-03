@@ -1,13 +1,13 @@
 import { Card, Stack, Text, Group, Button, TextInput, PasswordInput, Divider } from '@mantine/core';
 import { IconMail, IconLock, IconBrandGoogle } from '@tabler/icons-react';
-import type { FormData, PasswordStrength } from '../register';
+import type { RegisterFormData, PasswordStrength } from '@/services';
 import { PasswordStrengthIndicator } from './PasswordStrengthIndicator';
 
 interface AccountStepProps {
-    formData: FormData;
+    formData: RegisterFormData;
     passwordStrength: PasswordStrength;
     loading: boolean;
-    onInputChange: (key: keyof FormData, value: string) => void;
+    onInputChange: (key: keyof RegisterFormData, value: string) => void;
     onSubmit: (e: React.FormEvent) => void;
     onSocialRegister: (provider: string) => void;
 }
@@ -20,15 +20,14 @@ export const AccountStep: React.FC<AccountStepProps> = ({
     onSubmit,
     onSocialRegister,
 }) => (
-    <Card shadow="md" radius="md" className="p-4 sm:p-8 mt-6" withBorder>
-        <Stack className="space-y-4 sm:space-y-6">
-            <Stack className="space-y-2">
-                <Text fw={500} className="text-sm sm:text-base text-center">Quick Registration</Text>
+    <Card shadow="md" radius="md" p="xl" mt="md" withBorder>
+        <Stack>
+            <Stack>
+                <Text fw={500} ta="center">Quick Registration</Text>
                 <Group grow>
                     <Button
                         variant="light"
                         leftSection={<IconBrandGoogle size={16} />}
-                        className="text-sm sm:text-base"
                         onClick={() => onSocialRegister('Google')}
                     >
                         Google
@@ -38,8 +37,8 @@ export const AccountStep: React.FC<AccountStepProps> = ({
 
             <Divider label="Or register with email" labelPosition="center" />
 
-            <form onSubmit={onSubmit} className="w-full">
-                <Stack className="space-y-3 sm:space-y-4">
+            <form onSubmit={onSubmit}>
+                <Stack>
                     <TextInput
                         label="Email"
                         placeholder="your@email.com"
@@ -47,7 +46,6 @@ export const AccountStep: React.FC<AccountStepProps> = ({
                         leftSection={<IconMail size={16} />}
                         value={formData.email}
                         onChange={(e) => onInputChange('email', e.target.value)}
-                        classNames={{ input: 'text-sm sm:text-base' }}
                     />
 
                     <PasswordInput
@@ -57,7 +55,6 @@ export const AccountStep: React.FC<AccountStepProps> = ({
                         leftSection={<IconLock size={16} />}
                         value={formData.password}
                         onChange={(e) => onInputChange('password', e.target.value)}
-                        classNames={{ input: 'text-sm sm:text-base' }}
                     />
 
                     {formData.password && (
@@ -76,7 +73,6 @@ export const AccountStep: React.FC<AccountStepProps> = ({
                             formData.password !== formData.confirmPassword &&
                             "Passwords don't match"
                         }
-                        classNames={{ input: 'text-sm sm:text-base' }}
                     />
 
                     <Button
@@ -89,7 +85,7 @@ export const AccountStep: React.FC<AccountStepProps> = ({
                             formData.password !== formData.confirmPassword ||
                             passwordStrength.score < 40
                         }
-                        className="mt-4 text-sm sm:text-base"
+                        mt="md"
                     >
                         Continue
                     </Button>

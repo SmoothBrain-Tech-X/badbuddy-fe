@@ -1,489 +1,478 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import toast from 'react-hot-toast';
+
 import {
-    TextInput,
-    Select,
-    Button,
-    Card,
-    Badge,
-    Progress,
-    Group,
-    Text,
-    Avatar,
-    Container,
-    Grid,
-    ActionIcon,
-    Box,
-    Paper,
-    Stack,
-    Transition,
-    rem,
+    Container, Grid, Card, Group, Text, Badge,
+    Button, TextInput, Stack, Box, ThemeIcon,
+    Paper, Title, ActionIcon, Avatar, Select,
+    RangeSlider, Checkbox, Collapse, rem,
 } from '@mantine/core';
 import {
-    IconSearch,
-    IconPlus,
-    IconMapPin,
-    IconClock,
-    IconCrown,
-    IconTrophy,
-    IconFlame,
-    IconFilter,
-    IconArrowsUpDown,
-    IconUsers,
-    IconTarget,
-    IconChevronDown,
+    IconMapPin, IconSearch, IconAdjustments,
+    IconUsers, IconClock, IconTrophy,
+    IconTarget, IconChevronDown, IconChevronUp,
+    IconFilter, IconCrown,
 } from '@tabler/icons-react';
 import { useRouter } from 'next/navigation';
+import { sessionService, Session, User } from '@/services';
 
 // Types
-interface Host {
-    name: string;
-    avatar: string;
-}
-
-interface Participants {
-    current: number;
-    max: number;
-}
-
-interface PartyCardProps {
-    id: string;
-    title: string;
-    location: string;
-    time: string;
-    participants: Participants;
-    court: string;
-    isFull: boolean;
-    isJoined: boolean;
-    host: Host;
-    level?: string;
-}
 
 interface FilterOption {
-    label: string;
     value: string;
-    icon?: React.ReactNode;
+    label: string;
 }
 
 // Constants
-const SORT_OPTIONS: FilterOption[] = [
-    { value: 'newest', label: 'Newest' },
-    { value: 'oldest', label: 'Oldest' },
-    { value: 'mostParticipants', label: 'Most Participants' },
+const LEVELS: FilterOption[] = [
+    { value: 'beginner', label: 'Beginner' },
+    { value: 'intermediate', label: 'Intermediate' },
+    { value: 'advanced', label: 'Advanced' },
 ];
 
-const QUICK_FILTERS: FilterOption[] = [
-    { label: 'Near Me', value: 'near', icon: <IconTarget size={16} /> },
-    { label: 'Beginner', value: 'beginner' },
-    { label: 'Intermediate', value: 'intermediate' },
-    { label: 'Today', value: 'today' },
-    { label: 'This Week', value: 'week' },
+const TIME_FILTERS: FilterOption[] = [
+    { value: 'today', label: 'Today' },
+    { value: 'tomorrow', label: 'Tomorrow' },
+    { value: 'this_week', label: 'This Week' },
+    { value: 'next_week', label: 'Next Week' },
 ];
 
 // Components
-const HostAvatar: React.FC<{ host: Host }> = ({ host }) => (
-    <Box pos="relative">
-        <Avatar
-            src={host.avatar}
-            size="lg"
-            radius="md"
-            styles={{
-                root: {
-                    border: '3px solid var(--mantine-color-blue-1)',
-                    transition: 'transform 0.2s ease',
-                    '&:hover': {
-                        transform: 'scale(1.05)',
-                    },
-                },
-            }}
-        />
-        <ActionIcon
-            variant="filled"
-            color="yellow"
-            size="xs"
-            pos="absolute"
-            bottom={-4}
-            right={-4}
-            radius="md"
-            styles={{
-                root: {
-                    boxShadow: 'var(--mantine-shadow-sm)',
-                },
-            }}
-        >
-            <IconCrown size={12} />
-        </ActionIcon>
-    </Box>
-);
-
-const ParticipantsProgress: React.FC<{
-    participants: Participants;
-    isFull: boolean;
-}> = ({ participants, isFull }) => {
-    const progress = (participants.current / participants.max) * 100;
-    const spotsLeft = participants.max - participants.current;
-    const isAlmostFull = progress >= 80;
-
-    return (
-        <Stack gap="xs">
-            <Group justify="space-between">
-                <Text size="sm" c="dimmed">Participants</Text>
-                <Text fw={500}>{participants.current}/{participants.max}</Text>
-            </Group>
-            <Box pos="relative">
-                <Progress
-                    value={progress}
-                    size="md"
-                    radius="xl"
-                    color={isAlmostFull ? 'orange' : 'blue'}
-                    animated
-                />
-                <Transition mounted={isAlmostFull && !isFull} transition="fade">
-                    {(styles) => (
-                        <Text size="xs" c="orange" ta="right" mt={4} style={styles}>
-                            {spotsLeft} {spotsLeft === 1 ? 'spot' : 'spots'} left
-                        </Text>
-                    )}
-                </Transition>
-            </Box>
-        </Stack>
-    );
-};
-const PartyCard: React.FC<PartyCardProps> = ({
-    title,
-    location,
-    time,
-    participants,
-    court,
-    isFull,
-    isJoined,
-    host,
-    level,
+const PartyCard: React.FC<{ party: Session; onJoinLeave: () => Promise<void> }> = ({
+    party,
+    onJoinLeave,
 }) => {
     const router = useRouter();
-    const [isHovered, setIsHovered] = useState(false);
+    const isJoined = false; // This should be determined by checking current user's participation
 
     return (
-        <Card
-            shadow="sm"
-            padding="lg"
-            radius="md"
-            withBorder
-            h="100%"
-            className="flex flex-col justify-between transition-transform transition-shadow cursor-pointer"
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
-        >
-            <div>
-                <Group justify="space-between" mb="md">
+        <Card shadow="sm" radius="md" withBorder className="h-full">
+            <Stack>
+                <Group justify="space-between">
                     <Group>
-                        <HostAvatar host={host} />
+                        <Box pos="relative">
+                            <Avatar
+                                src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8YXZhdGFyfGVufDB8fDB8fHww"
+                                size="lg"
+                                radius="md"
+                            />
+                            <ActionIcon
+                                variant="filled"
+                                color="yellow"
+                                size="xs"
+                                pos="absolute"
+                                bottom={-4}
+                                right={-4}
+                                radius="md"
+                            >
+                                <IconCrown size={12} />
+                            </ActionIcon>
+                        </Box>
                         <div>
-                            <Text fw={700} size="lg" lineClamp={1}>{title}</Text>
-                            <Group gap="xs">
-                                <Text size="sm" c="dimmed">{host.name}</Text>
-                                <Text size="sm" c="dimmed">•</Text>
-                                <Text size="sm" c="blue" fw={500}>Court {court}</Text>
-                            </Group>
+                            <Text fw={700} size="lg" lineClamp={1}>{party.title}</Text>
+                            <Text size="sm" c="dimmed">{party.host_name}</Text>
                         </div>
                     </Group>
-
                 </Group>
-                <Group gap="xs" align="flex-end" py="sm">
-                    {level && (
-                        <Badge color="blue" variant="light" size="md">
-                            {level}
-                        </Badge>
-                    )}
-                    {isFull && (
-                        <Badge color="red" variant="light" size="md">
+
+                <Group gap="xs">
+                    <Badge color="blue" variant="light">
+                        {party.player_level}
+                    </Badge>
+                    {party.status === 'full' && (
+                        <Badge color="red" variant="light">
                             Full
                         </Badge>
                     )}
-                    {isJoined && (
-                        <Badge
-                            color="green"
-                            variant="light"
-                            size="md"
-                            leftSection={
-                                <IconUsers size={12} style={{ marginRight: rem(4) }} />
-                            }
-                        >
-                            Joined
-                        </Badge>
-                    )}
                 </Group>
-                <Grid mb="md">
+
+                <Grid>
                     <Grid.Col span={6}>
-                        <Paper
-                            p="sm"
-                            radius="md"
-                            bg="gray.0"
-                            style={{
-                                transition: 'background-color 0.2s ease',
-                                '&:hover': {
-                                    backgroundColor: 'var(--mantine-color-blue-0)',
-                                },
-                            }}
-                        >
+                        <Paper p="sm" radius="md" bg="gray.0">
                             <Group>
-                                <IconMapPin size={18} color="var(--mantine-color-blue-6)" />
-                                <Text size="sm" lineClamp={1}>{location}</Text>
+                                <IconMapPin size={16} className="text-blue-600" />
+                                <Text size="sm" lineClamp={1}>{party.venue_location}</Text>
                             </Group>
                         </Paper>
                     </Grid.Col>
                     <Grid.Col span={6}>
-                        <Paper
-                            p="sm"
-                            radius="md"
-                            bg="gray.0"
-                            style={{
-                                transition: 'background-color 0.2s ease',
-                                '&:hover': {
-                                    backgroundColor: 'var(--mantine-color-blue-0)',
-                                },
-                            }}
-                        >
+                        <Paper p="sm" radius="md" bg="gray.0">
                             <Group>
-                                <IconClock size={18} color="var(--mantine-color-blue-6)" />
-                                <Text size="sm" lineClamp={1}>{time.split('(')[0]}</Text>
+                                <IconClock size={16} className="text-blue-600" />
+                                <Text size="sm" lineClamp={1}>
+                                    {new Date(party.start_time).toLocaleTimeString([], {
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                    })}
+                                </Text>
                             </Group>
                         </Paper>
                     </Grid.Col>
                 </Grid>
 
-                <ParticipantsProgress participants={participants} isFull={isFull} />
-            </div>
-            <div style={{
-                marginTop: '16px',
-            }}>
-                <Button
-                    fullWidth
-                    variant="light"
-                    color="blue"
-                    styles={{
-                        root: {
-                            transition: 'all 0.2s ease',
-                            '&:hover': {
-                                transform: 'translateY(-1px)',
-                                boxShadow: 'var(--mantine-shadow-sm)',
-                            },
-                        },
-                    }}
-                    onClick={() => router.push('/parties/detail')}
-                >
-                    View Details
-                </Button>
-
-                <Button
-                    fullWidth
-                    mt="md"
-                    variant={isJoined ? 'light' : 'filled'}
-                    color={isJoined ? 'gray' : 'blue'}
-                    styles={{
-                        root: {
-                            transition: 'all 0.2s ease',
-                            '&:hover': {
-                                transform: 'translateY(-1px)',
-                                boxShadow: 'var(--mantine-shadow-sm)',
-                            },
-                        },
-                    }}
-                >
-                    {isJoined ? 'Leave Party' : 'Join Party'}
-                </Button>
-            </div>
+                <Stack gap="xs">
+                    <Text size="sm" fw={500} c="dimmed">Participants</Text>
+                    <Group justify="space-between">
+                        <Group gap="xs">
+                            <ThemeIcon size="sm" variant="light">
+                                <IconUsers size={14} />
+                            </ThemeIcon>
+                            <Text size="sm">
+                                {`
+                                    ${party.confirmed_players} Confirmed
+                                    ${party.pending_players} Pending
+                                `}
+                            </Text>
+                        </Group>
+                        <Text fw={500} c="blue">
+                            ฿{party.cost_per_person}/person
+                        </Text>
+                    </Group>
+                    <Box>
+                        <Button
+                            fullWidth
+                            variant="light"
+                            onClick={() => router.push(`/parties/${party.id}`)}
+                            mb="xs"
+                        >
+                            View Details
+                        </Button>
+                        <Button
+                            fullWidth
+                            variant={isJoined ? 'light' : 'filled'}
+                            color={isJoined ? 'gray' : 'blue'}
+                            onClick={onJoinLeave}
+                            disabled={party.status === 'full' && !isJoined}
+                        >
+                            {isJoined ? 'Leave Party' : 'Join Party'}
+                        </Button>
+                    </Box>
+                </Stack>
+            </Stack>
         </Card>
     );
 };
 
-const SearchBar: React.FC<{
-    searchTerm: string;
-    onSearchChange: (value: string) => void;
-    sortBy: string;
-    onSortChange: (value: string | null) => void;
-}> = ({ searchTerm, onSearchChange, sortBy, onSortChange }) => (
-    <Paper
-        shadow="sm"
-        p="md"
-        radius="lg"
-        mb="xl"
-        style={{
-            transition: 'transform 0.2s ease',
-            '&:focuswithin': {
-                transform: 'translateY(-1px)',
-            },
-        }}
-    >
-        <Group>
-            <TextInput
-                placeholder="Search by name or location"
-                leftSection={<IconSearch size={16} />}
-                value={searchTerm}
-                onChange={(e) => onSearchChange(e.target.value)}
-                style={{ flex: 1 }}
-            />
-            <Group>
-                <Select
-                    value={sortBy}
-                    onChange={onSortChange}
-                    data={SORT_OPTIONS}
-                    leftSection={<IconArrowsUpDown size={16} />}
-                    rightSection={<IconChevronDown size={16} />}
-                />
-                <ActionIcon
-                    variant="light"
-                    size="lg"
-                    style={{
-                        transition: 'transform 0.2s ease',
-                        '&:hover': {
-                            transform: 'rotate(15deg)',
-                        },
-                    }}
-                >
-                    <IconFilter size={16} />
-                </ActionIcon>
-            </Group>
-        </Group>
-    </Paper>
-);
-
-const QuickFilters: React.FC = () => (
-    <Group gap="xs" mb="xl" wrap="nowrap">
-        {QUICK_FILTERS.map(({ label, value, icon }) => (
-            <Button
-                key={value}
-                variant="light"
-                leftSection={icon}
-                styles={{
-                    root: {
-                        transition: 'all 0.2s ease',
-                        '&:hover': {
-                            transform: 'translateY(-1px)',
-                            boxShadow: 'var(--mantine-shadow-sm)',
-                        },
-                    },
-                }}
-            >
-                {label}
-            </Button>
-        ))}
-    </Group>
-);
-
-const HeaderSection: React.FC = () => (
-    <Stack gap={0} mb="xl">
-        <Text
-            size="xl"
-            fw={700}
-            style={{
-                fontSize: rem(32),
-                letterSpacing: '-0.5px',
-                background: 'linear-gradient(45deg, var(--mantine-color-blue-6) 0%, var(--mantine-color-indigo-5) 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                textAlign: 'center',
-                marginBottom: rem(8),
-            }}
-        >
-            Badbuddy Parties
-        </Text>
-        <Group justify="center" mt={4} mb="lg">
-            <Badge
-                variant="dot"
-                color="orange"
-                size="lg"
-            >
-                {`${12} Active Parties`}
-            </Badge>
-            <Badge
-                variant="dot"
-                color="green"
-                size="lg"
-            >
-                {`${48} Players `}
-            </Badge>
-        </Group>
-        <Text
-            size="sm"
-            c="dimmed"
-            maw={500}
-            mx="auto"
-            px="md"
-            style={{
-                lineHeight: 1.6,
-                fontWeight: 400,
-                textAlign: 'center',
-            }}
-        >
-            Discover and join exciting badminton parties near you.
-            Connect with players, improve your skills, and enjoy the game together.
-        </Text>
-    </Stack>
-);
-
-// Main Component
-const Dashboard: React.FC = () => {
-    const [searchTerm, setSearchTerm] = useState('');
-    const [sortBy, setSortBy] = useState('newest');
-
-    // Mock data
-    const parties: PartyCardProps[] = [
-        {
-            id: '1',
-            title: 'Casual Badminton Session',
-            location: 'Kasetsart University Courts',
-            time: 'Sep 18, 2024 16:00 - 18:00 (2 hours)',
-            participants: { current: 10, max: 10 },
-            court: '1',
-            isFull: true,
-            isJoined: false,
-            host: { name: 'John Doe', avatar: 'https://github.com/shadcn.png' },
-            level: 'Intermediate',
-        },
-        {
-            id: '2',
-            title: 'Beginner Practice',
-            location: 'Central Sports Complex',
-            time: 'Sep 19, 2024 18:00 - 20:00 (2 hours)',
-            participants: { current: 4, max: 10 },
-            court: '2',
-            isFull: false,
-            isJoined: true,
-            host: { name: 'Jane Smith', avatar: 'https://github.com/shadcn.png' },
-            level: 'Beginner',
-        },
-    ];
-
-    const filteredParties = parties.filter(party =>
-        party.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        party.location.toLowerCase().includes(searchTerm.toLowerCase())
+const FilterSection: React.FC<{
+    visible: boolean;
+    level: string | null;
+    timeFilter: string | null;
+    priceRange: [number, number];
+    onLevelChange: (value: string | null) => void;
+    onTimeFilterChange: (value: string | null) => void;
+    onPriceRangeChange: (value: [number, number]) => void;
+}> = ({
+    visible,
+    level,
+    timeFilter,
+    priceRange,
+    onLevelChange,
+    onTimeFilterChange,
+    onPriceRangeChange,
+}) => (
+        <Collapse in={visible}>
+            <Paper p="md" radius="md" bg="gray.0" mt="xs">
+                <Grid>
+                    <Grid.Col span={{ base: 12, md: 4 }}>
+                        <Text fw={500} mb="xs">Level</Text>
+                        <Select
+                            placeholder="Select level"
+                            data={LEVELS}
+                            value={level}
+                            onChange={onLevelChange}
+                            clearable
+                        />
+                    </Grid.Col>
+                    <Grid.Col span={{ base: 12, md: 4 }}>
+                        <Text fw={500} mb="xs">When</Text>
+                        <Select
+                            placeholder="Select time"
+                            data={TIME_FILTERS}
+                            value={timeFilter}
+                            onChange={onTimeFilterChange}
+                            clearable
+                        />
+                    </Grid.Col>
+                    <Grid.Col span={{ base: 12, md: 4 }}>
+                        <Text fw={500} mb="xs">Price Range (per person)</Text>
+                        <RangeSlider
+                            min={0}
+                            max={1000}
+                            step={50}
+                            value={priceRange}
+                            onChange={onPriceRangeChange}
+                            marks={[
+                                { value: 0, label: '฿0' },
+                                { value: 500, label: '฿500' },
+                                { value: 1000, label: '฿1000' },
+                            ]}
+                        />
+                    </Grid.Col>
+                </Grid>
+            </Paper>
+        </Collapse>
     );
 
+// Main Component
+const PartyListPage: React.FC = () => {
+    const router = useRouter();
+    // State management (previous states remain the same)
+    const [search, setSearch] = useState('');
+    const [filtersVisible, setFiltersVisible] = useState(false);
+    const [level, setLevel] = useState<User['play_level'] | null>(null);
+    const [timeFilter, setTimeFilter] = useState<string | null>(null);
+    const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
+    const [parties, setParties] = useState<Session[]>([]);
+    const [page, setPage] = useState(1);
+    const [limit] = useState(9);
+    const [total, setTotal] = useState(0);
+
+    const fetchParties = useCallback(async () => {
+        try {
+            toast.loading('Loading parties...', { id: 'loading-parties' });
+            const response = await sessionService.search({
+                q: search,
+                limit,
+                offset: (page - 1) * limit,
+                player_level: level || undefined,
+                date: timeFilter || undefined,
+            });
+
+            if (response) {
+                setParties(response.sessions);
+                setTotal(response.total);
+                toast.dismiss('loading-parties');
+            }
+        } catch (err) {
+            toast.error(
+                err instanceof Error ? err.message : 'Failed to load parties',
+                { id: 'loading-parties' }
+            );
+        }
+    }, [search, page, limit, level, timeFilter]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setPage(1);
+            fetchParties();
+        }, 300);
+
+        return () => {
+            clearTimeout(timer);
+            // Dismiss specific toast instead of all toasts
+            toast.dismiss('loading-parties');
+        };
+    }, [search, level, timeFilter, priceRange, fetchParties]);
+
+    // Fixed handleJoinLeave with proper toast handling
+    const handleJoinLeave = async (partyId: string) => {
+        try {
+            toast.loading('Processing request...', { id: 'join-leave' });
+            await fetchParties();
+            toast.success('Successfully updated party status', { id: 'join-leave' });
+        } catch (err) {
+            toast.error(
+                err instanceof Error ? err.message : 'Failed to update party status',
+                { id: 'join-leave' }
+            );
+        }
+    };
+
+    const handleClearFilters = () => {
+        setLevel(null);
+        setTimeFilter(null);
+        setPriceRange([0, 1000]);
+        setSearch('');
+        setPage(1);
+        toast.success('Filters cleared', { duration: 2000 });
+    };
     return (
         <Box bg="gray.0" mih="100vh">
             <Container size="xl" py="xl">
-                <HeaderSection />
-                <SearchBar
-                    searchTerm={searchTerm}
-                    onSearchChange={setSearchTerm}
-                    sortBy={sortBy}
-                    onSortChange={(value) => setSortBy(value || 'newest')}
-                />
+                {/* Header */}
+                <Stack mb="xl" align="center">
+                    <Title
+                        style={{
+                            fontSize: rem(36),
+                            background: 'linear-gradient(45deg, var(--mantine-color-blue-6), var(--mantine-color-indigo-5))',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                        }}
+                    >
+                        Badminton Parties
+                    </Title>
+                    <Text size="lg" c="dimmed" ta="center">
+                        Find and join badminton sessions near you
+                    </Text>
+                </Stack>
 
-                <QuickFilters />
+                {/* Search and Filters */}
+                <Paper shadow="sm" p="md" radius="md" mb="xl">
+                    <Stack>
+                        <Group>
+                            <TextInput
+                                placeholder="Search parties..."
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                leftSection={<IconSearch size={16} />}
+                                style={{ flex: 1 }}
+                            />
+                            <Button
+                                variant="light"
+                                leftSection={<IconFilter size={16} />}
+                                rightSection={
+                                    filtersVisible ? (
+                                        <IconChevronUp size={16} />
+                                    ) : (
+                                        <IconChevronDown size={16} />
+                                    )
+                                }
+                                onClick={() => setFiltersVisible(!filtersVisible)}
+                            >
+                                Filters
+                            </Button>
+                        </Group>
+                        <FilterSection
+                            visible={filtersVisible}
+                            level={level}
+                            timeFilter={timeFilter}
+                            priceRange={priceRange}
+                            onLevelChange={(value) => setLevel(value as User['play_level'] | null)}
+                            onTimeFilterChange={setTimeFilter}
+                            onPriceRangeChange={setPriceRange}
+                        />
+                    </Stack>
+                </Paper>
 
-                <Grid align="stretch"> {/* เพิ่ม align="stretch" */}
-                    {filteredParties.map(party => (
-                        <Grid.Col key={party.id} span={{ base: 12, md: 6, lg: 4 }}>
-                            <PartyCard {...party} />
-                        </Grid.Col>
-                    ))}
-                </Grid>
+                {/* Active Filters */}
+                {(level || timeFilter || search) && (
+                    <Group mb="xl">
+                        <Text size="sm" fw={500}>Active Filters:</Text>
+                        {level && (
+                            <Badge
+                                variant="light"
+                                rightSection={
+                                    <ActionIcon
+                                        variant="transparent"
+                                        size="sm"
+                                        onClick={() => setLevel(null)}
+                                    >
+                                        ×
+                                    </ActionIcon>
+                                }
+                            >
+                                {LEVELS.find(l => l.value === level)?.label}
+                            </Badge>
+                        )}
+                        {timeFilter && (
+                            <Badge
+                                variant="light"
+                                rightSection={
+                                    <ActionIcon
+                                        variant="transparent"
+                                        size="sm"
+                                        onClick={() => setTimeFilter(null)}
+                                    >
+                                        ×
+                                    </ActionIcon>
+                                }
+                            >
+                                {TIME_FILTERS.find(t => t.value === timeFilter)?.label}
+                            </Badge>
+                        )}
+                        <Button variant="subtle" size="xs" onClick={handleClearFilters}>
+                            Clear All
+                        </Button>
+                    </Group>
+                )}
+
+                {/* No Results */}
+                {parties.length === 0 && (
+                    <Paper p="xl" mt="md" radius="md" bg="gray.0">
+                        <Stack align="center">
+                            <Text size="lg" fw={500}>No parties found</Text>
+                            <Text c="dimmed">Try adjusting your search or filters</Text>
+                            <Button variant="light" onClick={handleClearFilters}>
+                                Clear all filters
+                            </Button>
+                        </Stack>
+                    </Paper>
+                )}
+
+                {/* Quick Stats */}
+                {parties.length > 0 && (
+                    <Group justify="center" mb="xl">
+                        <Badge variant="dot" color="blue" size="lg">
+                            {total} Total Parties
+                        </Badge>
+                        <Badge variant="dot" color="green" size="lg">
+                            {parties.filter(p => p.status === 'open').length} Open Parties
+                        </Badge>
+                        <Badge variant="dot" color="yellow" size="lg">
+                            {/* {parties.reduce((acc, p) => acc + p.current_participants, 0)} Active Players */}
+                        </Badge>
+                    </Group>
+                )}
+
+                {/* Parties Grid */}
+                {parties.length > 0 && (
+                    <>
+                        <Grid>
+                            {parties.map((party) => (
+                                <Grid.Col key={party.id} span={{ base: 12, md: 6, lg: 4 }}>
+                                    <PartyCard
+                                        party={party}
+                                        onJoinLeave={() => handleJoinLeave(party.id)}
+                                    />
+                                </Grid.Col>
+                            ))}
+                        </Grid>
+
+                        {/* Pagination */}
+                        <Group justify="center" mt="xl">
+                            <Button
+                                variant="light"
+                                disabled={page === 1}
+                                onClick={() => setPage(p => Math.max(1, p - 1))}
+                            >
+                                Previous
+                            </Button>
+                            <Text>
+                                Page {page} of {Math.ceil(total / limit)}
+                            </Text>
+                            <Button
+                                variant="light"
+                                disabled={page >= Math.ceil(total / limit)}
+                                onClick={() => setPage(p => p + 1)}
+                            >
+                                Next
+                            </Button>
+                        </Group>
+
+                        {/* Create Party Button */}
+                        <Box
+                            pos="fixed"
+                            bottom={40}
+                            right={40}
+                            style={{ zIndex: 1000 }}
+                        >
+                            <Button
+                                size="lg"
+                                radius="xl"
+                                leftSection={<IconTrophy size={20} />}
+                                onClick={() => router.push('/parties/create')}
+                                className="shadow-lg"
+                            >
+                                Create Party
+                            </Button>
+                        </Box>
+                    </>
+                )}
             </Container>
         </Box>
     );
 };
 
-export default Dashboard;
+export default PartyListPage;
