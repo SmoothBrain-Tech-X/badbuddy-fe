@@ -61,13 +61,6 @@ export function useAuth() {
         try {
             await storeLogin(data);
 
-            // Get redirect URL from query params
-            const redirectUrl = searchParams.get('redirect');
-
-            toast.success('Welcome back!', {
-                duration: 3000,
-                icon: '👋',
-            });
 
             // Always redirect to /home after successful login
             router.push('/home');
@@ -85,7 +78,7 @@ export function useAuth() {
 
             toast.success('Successfully signed out', {
                 duration: 3000,
-                icon: '👋',
+                icon: '',
             });
 
             router.push('/login');

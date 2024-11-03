@@ -2,10 +2,9 @@ import { Card, Stack, ThemeIcon, Title, Text, Button } from '@mantine/core';
 import { IconCheck } from '@tabler/icons-react';
 
 interface CompletedStepProps {
-    onStart: () => void;
 }
 
-export const CompletedStep: React.FC<CompletedStepProps> = ({ onStart }) => (
+export const CompletedStep: React.FC<CompletedStepProps> = () => (
     <Card shadow="md" radius="md" p="xl" mt="md" withBorder>
         <Stack align="center">
             <ThemeIcon
@@ -20,13 +19,10 @@ export const CompletedStep: React.FC<CompletedStepProps> = ({ onStart }) => (
                 Welcome to the Badminton community.
                 You can now start exploring and joining games.
             </Text>
-            <Button
-                fullWidth
-                size="md"
-                onClick={onStart}
-            >
-                Start Playing
-            </Button>
+            <Text c="dimmed" ta="center">
+                Please wait while we redirect you to the app.
+            </Text>
+
         </Stack>
     </Card>
 );

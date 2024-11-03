@@ -19,9 +19,12 @@ import {
     UnstyledButton,
     rem,
     LoadingOverlay,
+    Dialog,
+    Modal,
 } from '@mantine/core';
 import {
     IconHome,
+
     IconCalendarEvent,
     IconMapPin,
     IconMessage,
@@ -36,13 +39,13 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import toast from 'react-hot-toast';
 
-
 const Navbar = () => {
     const router = useRouter();
     const { user, logout, isAuthenticated, isLoading } = useAuth();
     const [drawerOpened, setDrawerOpened] = useState(false);
     const [userMenuOpened, setUserMenuOpened] = useState(false);
     const [isNavigating, setIsNavigating] = useState(false);
+    const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
     console.log("isAuthenticated", isAuthenticated);
 
@@ -70,13 +73,14 @@ const Navbar = () => {
             label: 'Sign out',
             icon: IconLogout,
             color: 'red',
-            onClick: handleLogout
+            onClick: () => setShowLogoutConfirm(true)
         },
     ];
 
     async function handleLogout() {
         try {
             setIsNavigating(true);
+            setShowLogoutConfirm(false);
             await logout();
             router.push('/login');
         } catch (error) {
@@ -120,6 +124,26 @@ const Navbar = () => {
                 zIndex={1000}
                 overlayProps={{ blur: 2 }}
             />
+
+            <Modal
+                opened={showLogoutConfirm}
+                onClose={() => setShowLogoutConfirm(false)}
+                title="Confirm Sign Out"
+                centered
+                size="sm"
+            >
+                <Text size="sm" mb="lg">
+                    Are you sure you want to sign out?
+                </Text>
+                <Group justify="flex-end" gap="sm">
+                    <Button variant="light" onClick={() => setShowLogoutConfirm(false)}>
+                        Cancel
+                    </Button>
+                    <Button color="red" onClick={handleLogout}>
+                        Sign Out
+                    </Button>
+                </Group>
+            </Modal>
 
             <Paper
                 shadow="sm"
@@ -334,7 +358,7 @@ const Navbar = () => {
                     </Stack>
                 </ScrollArea>
             </Drawer>
-        </Box>
+        </Box >
     );
 };
 

@@ -1,7 +1,7 @@
 // src/app/(auth)/register/page.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
@@ -16,12 +16,13 @@ import {
     Box,
 } from '@mantine/core';
 import { IconShieldCheck } from '@tabler/icons-react';
-import { type RegisterFormData, type PasswordStrength } from '@/services';
+import { type RegisterFormData, type PasswordStrength, authService } from '@/services';
 import { checkPasswordStrength } from './utils/passwordUtils';
 import { AccountStep } from './components/AccountStep';
 import { ProfileStep } from './components/ProfileStep';
 import { PreferencesStep } from './components/PreferencesStep';
 import { CompletedStep } from './components/CompletedStep';
+import { useAuth } from '@/hooks/useAuth';
 
 const registerSchema = z.object({
     email: z.string()
@@ -60,6 +61,8 @@ const initialFormData: RegisterFormData = {
 
 const RegisterPage = () => {
     const router = useRouter();
+    const { login, isLoading: isAuthLoading, error: authError } = useAuth();
+    const loginTimeoutRef = useRef<NodeJS.Timeout>();
 
     const [active, setActive] = useState(0);
     const [loading, setLoading] = useState(false);
@@ -120,11 +123,92 @@ const RegisterPage = () => {
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+
+        try {
+            if (!validateCurrentStep()) {
+                setLoading(false);
+                return;
+            }
+
+            if (active < 2) {
+                setActive(active + 1);
+                setLoading(false);
+                return;
+            }
+
+            const validatedData = registerSchema.parse(formData);
+            const loadingToast = toast.loading('Creating your account...');
+
+            try {
+                const registerData = {
+                    email: validatedData.email,
+                    password: validatedData.password,
+                    first_name: validatedData.firstName,
+                    last_name: validatedData.lastName,
+                    phone: validatedData.phone,
+                    gender: validatedData.gender,
+                    location: validatedData.location,
+                    play_level: validatedData.level,
+                    play_hand: validatedData.playingHand,
+                    bio: validatedData.bio,
+                };
+
+                const response = await authService.register(registerData);
+
+                // Move to completed step
+                setActive(3);
+                toast.success('Account created successfully!', {
+                    duration: 3000,
+                    icon: '🎉',
+                });
+
+                // Store timeout reference
+                const { email, password } = validatedData;
+                loginTimeoutRef.current = setTimeout(async () => {
+                    try {
+                        await login({ email, password });
+                    } catch (loginError) {
+                        console.error('Login error:', loginError);
+                        toast.error('Auto-login failed. Please try logging in manually.');
+                    }
+                }, 2000);
+
+            } catch (errorResponse) {
+                console.error('Registration error:', errorResponse);
+                if (errorResponse instanceof Error && 'response' in errorResponse) {
+                    toast.error((errorResponse as any).response.data.error);
+                } else {
+                    toast.error('Failed to create account');
+                }
+                return;
+            } finally {
+                toast.dismiss(loadingToast);
+            }
+
+        } catch (error) {
+            if (error instanceof z.ZodError) {
+                const firstError = error.errors[0];
+                toast.error(firstError.message);
+            } else {
+                console.error('Form submission error:', error);
+                toast.error('An unexpected error occurred');
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleStart = () => {
+        // Clear the login timeout if it exists
+        if (loginTimeoutRef.current) {
+            clearTimeout(loginTimeoutRef.current);
+        }
     };
 
     const handleSocialRegister = async (provider: string) => {
-        toast.loading(`Connecting to ${provider}...`);
-        // Implement social registration
+        toast.error('Social login coming soon');
     };
 
     return (
@@ -176,7 +260,7 @@ const RegisterPage = () => {
                         </Stepper.Step>
 
                         <Stepper.Completed>
-                            <CompletedStep onStart={() => router.push('/home')} />
+                            <CompletedStep />
                         </Stepper.Completed>
                     </Stepper>
 

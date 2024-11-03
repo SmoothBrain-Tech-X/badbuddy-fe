@@ -10,11 +10,6 @@ export class AuthService {
     try {
       const response = await this.api.post<AuthResponse>('/users/register', data);
 
-      if (!response?.access_token) {
-        throw new Error('Invalid registration response');
-      }
-
-      this.setToken(response.access_token);
       return response;
     } catch (error) {
       console.error('Registration error:', error);

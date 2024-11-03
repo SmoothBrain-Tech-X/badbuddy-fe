@@ -30,6 +30,7 @@ import {
     IconShieldCheck,
 } from '@tabler/icons-react';
 import { useAuth } from '@/hooks/useAuth';
+import toast from 'react-hot-toast';
 
 // Form validation schema
 const loginSchema = z.object({
@@ -72,7 +73,8 @@ const LoginContent = () => {
     };
 
     const handleSocialLogin = async (provider: string) => {
-        // Implement social login
+        //show toast cooming soon
+        toast.error('Social login coming soon');
     };
 
     return (

@@ -39,6 +39,7 @@ export type PlayerLevel = 'beginner' | 'intermediate' | 'advanced';
 export type PlayingHand = 'left' | 'right';
 export type Gender = 'male' | 'female' | 'other';
 
+// src/types/register.ts
 export interface RegisterFormData {
   email: string;
   password: string;
@@ -46,14 +47,39 @@ export interface RegisterFormData {
   firstName: string;
   lastName: string;
   phone: string;
-  gender: string; // Could be constrained to Gender type if needed
+  gender: string;
   bio: string;
   location: string;
-  level: PlayerLevel;
-  playingHand: PlayingHand;
+  level: 'beginner' | 'intermediate' | 'advanced';
+  playingHand: 'left' | 'right';
 }
 
 export interface PasswordStrength {
   score: number;
   feedback: string;
 }
+
+// Constants for form validation
+export const FORM_VALIDATION = {
+  MIN_PASSWORD_LENGTH: 6,
+  MAX_PASSWORD_LENGTH: 50,
+  MIN_PASSWORD_STRENGTH: 40,
+  PHONE_REGEX: /^[0-9]{10}$/, // Thai phone number format
+} as const;
+
+export const SKILL_LEVELS = [
+  { value: 'beginner', label: 'Beginner - New to badminton' },
+  { value: 'intermediate', label: 'Intermediate - Regular player' },
+  { value: 'advanced', label: 'Advanced - Competitive player' },
+] as const;
+
+export const PLAYING_HANDS = [
+  { value: 'right', label: 'Right Hand' },
+  { value: 'left', label: 'Left Hand' },
+] as const;
+
+export const GENDERS = [
+  { value: 'male', label: 'Male' },
+  { value: 'female', label: 'Female' },
+  { value: 'other', label: 'Other' },
+] as const;
