@@ -189,9 +189,7 @@ export default function BookingManagement() {
                 Cancel
               </Button>
             )}
-            <Button variant="light" size="xs">
-              View Details
-            </Button>
+           
           </Group>
         </Group>
       </Paper>

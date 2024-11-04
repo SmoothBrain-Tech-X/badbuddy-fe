@@ -14,7 +14,8 @@ import {
     Image,
     Badge,
     Radio,
-    RadioGroup
+    RadioGroup,
+    NumberFormatter
 } from '@mantine/core';
 import { DatePickerInput, TimeInput } from '@mantine/dates';
 import { IconX, IconCalendar, IconAlertCircle, IconClock } from '@tabler/icons-react';
@@ -349,7 +350,7 @@ const BookingDrawer: React.FC<BookingDrawerProps> = ({
                         </Group>
                         <Group justify="space-between">
                             <Text fw={500}>Duration</Text>
-                            <Text>{calculateDuration() > 0 ? `${calculateDuration()} hours` : '-'}</Text>
+                            <NumberFormatter value={calculateDuration().toFixed(2)} thousandSeparator suffix=' hours' /> 
                         </Group>
                         <Group justify="space-between">
                             <Text fw={500}>Price</Text>

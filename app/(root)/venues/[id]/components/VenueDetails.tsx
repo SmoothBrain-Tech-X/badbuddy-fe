@@ -133,9 +133,7 @@ const VenueDetails = ({
                 {venueData.facilities.map((facility) => (
                   <Paper key={facility.id} p="sm" radius="md" withBorder>
                     <Group>
-                      <ThemeIcon variant="light" size="lg" color="blue">
-                        <FacilityIcon facility={facility.name} />
-                      </ThemeIcon>
+                      <FacilityIcon facility={facility.name} />
                       <Text size="sm">{facility.name}</Text>
                     </Group>
                   </Paper>
