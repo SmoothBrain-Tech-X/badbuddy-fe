@@ -1,9 +1,9 @@
-/* eslint-disable max-len */
-/* eslint-disable react/jsx-indent-props */
-
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { z } from 'zod';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
     Container,
     Title,
@@ -42,75 +42,126 @@ import {
     IconClock,
 } from '@tabler/icons-react';
 import { DatePickerInput, TimeInput } from '@mantine/dates';
+import { useRouter } from 'next/navigation';
+import { VenueList, venueService, VenueListDTO } from '@/services';
 
-// Types
-type SkillLevel = 'beginner' | 'intermediate' | 'advanced';
+// Types and Schema
+const skillLevels = ['beginner', 'intermediate', 'advanced'] as const;
+type SkillLevel = (typeof skillLevels)[number];
 
-interface Venue {
-    id: string;
-    name: string;
-}
-
-interface PartyFormData {
-    name: string;
-    skillLevel: SkillLevel | null;
-    description: string;
-    venue: string;
-    date: Date | null;
-    startTime: string;
-    endTime: string;
-    selectedCourts: string[];
-    maxParticipants: number;
-    costPerPerson: number;
-    rules: string[];
-    allowCancellation: boolean;
-}
-
-// Constants
-const SKILL_LEVELS = [
-    { value: 'beginner', label: 'Beginner' },
-    { value: 'intermediate', label: 'Intermediate' },
-    { value: 'advanced', label: 'Advanced' },
-];
-
-const VENUES: Venue[] = [
+const VENUES = [
     { id: 'venue1', name: 'Sports Complex A' },
     { id: 'venue2', name: 'Central Stadium' },
-];
+] as const;
 
-const COURTS = ['Court 1', 'Court 2', 'Court 3', 'Court 4'];
+
+const partySchema = z.object({
+    name: z.string()
+        .min(3, 'Party name must be at least 3 characters')
+        .max(50, 'Party name must be less than 50 characters'),
+    skillLevel: z.enum(skillLevels, {
+        required_error: 'Please select a skill level',
+    }),
+    description: z.string()
+        .min(10, 'Description must be at least 10 characters')
+        .max(500, 'Description must be less than 500 characters'),
+    venue: z.string().min(1, 'Please select a venue'),
+    date: z.date({
+        required_error: 'Please select a date',
+        invalid_type_error: 'Invalid date format',
+    }),
+    startTime: z.string().min(1, 'Please select start time'),
+    endTime: z.string().min(1, 'Please select end time'),
+    maxParticipants: z.number()
+        .min(2, 'Minimum 2 participants required')
+        .max(100, 'Maximum 100 participants allowed'),
+    costPerPerson: z.number()
+        .min(0, 'Cost cannot be negative')
+        .max(10000, 'Cost cannot exceed 10000'),
+    rules: z.array(z.string().min(1, 'Rule cannot be empty')),
+    allowCancellation: z.boolean(),
+});
+
+type PartyFormData = z.infer<typeof partySchema>;
 
 const CreateParty = () => {
-    const [formData, setFormData] = useState<PartyFormData>({
-        name: '',
-        skillLevel: null,
-        description: '',
-        venue: '',
-        date: null,
-        startTime: '',
-        endTime: '',
-        selectedCourts: [],
-        maxParticipants: 10,
-        costPerPerson: 0,
-        rules: ['Bring your own racket', 'Arrive 15 minutes early'],
-        allowCancellation: true,
+    const router = useRouter();
+    const [loading, setLoading] = useState(false);
+    const [venues, setVenues] = useState<VenueList[] | null>(null);
+
+
+    const fetchVenues = async () => {
+        try {
+            // Fetch venues from API
+            const venueResponse: VenueListDTO | null = await venueService.list();
+            if (venueResponse) {
+                setVenues(venueResponse.venues);
+            }
+        }
+        catch (error) {
+            console.error('Error fetching venues:', error);
+        }
+
+    }
+
+    useEffect(() => {
+        fetchVenues();
+
+    }, []);
+
+    const {
+        control,
+        handleSubmit,
+        watch,
+        formState: { errors },
+        setValue,
+        getValues,
+    } = useForm<PartyFormData>({
+        resolver: zodResolver(partySchema),
+        defaultValues: {
+            name: '',
+            skillLevel: 'intermediate',
+            description: '',
+            venue: '',
+            date: undefined,
+            startTime: '',
+            endTime: '',
+            maxParticipants: 10,
+            costPerPerson: 0,
+            rules: ['Bring your own racket', 'Arrive 15 minutes early'],
+            allowCancellation: true,
+        },
     });
 
-    const handleFormChange = <K extends keyof PartyFormData>(
-        key: K,
-        value: PartyFormData[K]
-    ) => {
-        setFormData(prev => ({ ...prev, [key]: value }));
-    };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const onSubmit = async (data: PartyFormData) => {
         try {
-            console.log('Submitting form data:', formData);
+            setLoading(true);
+            console.log('Submitting form data:', data);
             // API call would go here
+            // await createParty(data);
+            router.push('/parties'); // Redirect after success
         } catch (error) {
             console.error('Error submitting form:', error);
+        } finally {
+            setLoading(false);
         }
+    };
+
+
+
+    const handleAddRule = () => {
+        const currentRules = getValues('rules');
+        setValue('rules', [...currentRules, ''], { shouldValidate: true });
+    };
+
+    const handleRemoveRule = (index: number) => {
+        const currentRules = getValues('rules');
+        setValue(
+            'rules',
+            currentRules.filter((_, i) => i !== index),
+            { shouldValidate: true }
+        );
     };
 
     return (
@@ -121,14 +172,14 @@ const CreateParty = () => {
                     <Button
                         variant="subtle"
                         leftSection={<IconArrowLeft size={16} />}
-                        onClick={() => window.history.back()}
+                        onClick={() => router.back()}
                     >
                         Back
                     </Button>
                     <Title order={1}>Create Party</Title>
                 </Group>
 
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={handleSubmit(onSubmit)}>
                     <Stack>
                         {/* Basic Info Card */}
                         <Card withBorder radius="md" p="lg">
@@ -140,31 +191,50 @@ const CreateParty = () => {
                             </Group>
 
                             <Stack>
-                                <TextInput
-                                    label="Party Name"
-                                    placeholder="e.g., Casual Badminton Session"
-                                    value={formData.name}
-                                    onChange={(e) => handleFormChange('name', e.target.value)}
-                                    required
+                                <Controller
+                                    name="name"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <TextInput
+                                            label="Party Name"
+                                            placeholder="e.g., Casual Badminton Session"
+                                            error={errors.name?.message}
+                                            {...field}
+                                        />
+                                    )}
                                 />
 
                                 <Stack>
                                     <Text fw={500} size="sm">Skill Level</Text>
-                                    <SegmentedControl
-                                        fullWidth
-                                        data={SKILL_LEVELS}
-                                        value={formData.skillLevel || ''}
-                                        onChange={(value) => handleFormChange('skillLevel', value as SkillLevel)}
+                                    <Controller
+                                        name="skillLevel"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <SegmentedControl
+                                                fullWidth
+                                                data={[
+                                                    { value: 'beginner', label: 'Beginner' },
+                                                    { value: 'intermediate', label: 'Intermediate' },
+                                                    { value: 'advanced', label: 'Advanced' },
+                                                ]}
+                                                {...field}
+                                            />
+                                        )}
                                     />
                                 </Stack>
 
-                                <Textarea
-                                    label="Description"
-                                    placeholder="Describe your party details"
-                                    minRows={4}
-                                    value={formData.description}
-                                    onChange={(e) => handleFormChange('description', e.target.value)}
-                                    required
+                                <Controller
+                                    name="description"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <Textarea
+                                            label="Description"
+                                            placeholder="Describe your party details"
+                                            minRows={4}
+                                            error={errors.description?.message}
+                                            {...field}
+                                        />
+                                    )}
                                 />
                             </Stack>
                         </Card>
@@ -181,66 +251,71 @@ const CreateParty = () => {
                             <Stack>
                                 <Grid>
                                     <Grid.Col span={{ base: 12, sm: 6 }}>
-                                        <Select
-                                            label="Venue"
-                                            placeholder="Select venue"
-                                            data={VENUES.map(venue => ({
-                                                value: venue.id,
-                                                label: venue.name,
-                                            }))}
-                                            value={formData.venue}
-                                            onChange={(value) => handleFormChange('venue', value || '')}
-                                            required
+                                        <Controller
+                                            name="venue"
+                                            control={control}
+                                            render={({ field }) => (
+                                                <Select
+                                                    label="Venue"
+                                                    placeholder="Select venue"
+                                                    data={venues?.map((venue) => ({
+                                                        value: venue.id,
+                                                        label: venue.name,
+                                                    }))}
+                                                    error={errors.venue?.message}
+                                                    searchable  // Enable search functionality
+                                                    nothingFoundMessage="No venues found"
+                                                    maxDropdownHeight={280} // Optional: control dropdown height
+                                                    {...field}
+                                                />
+                                            )}
                                         />
                                     </Grid.Col>
                                     <Grid.Col span={{ base: 12, sm: 6 }}>
-                                        <DatePickerInput
-                                            label="Date"
-                                            placeholder="Pick a date"
-                                            value={formData.date}
-                                            onChange={(date) => handleFormChange('date', date)}
-                                            required
+                                        <Controller
+                                            name="date"
+                                            control={control}
+                                            render={({ field }) => (
+                                                <DatePickerInput
+                                                    label="Date"
+                                                    placeholder="Pick a date"
+                                                    error={errors.date?.message}
+                                                    {...field}
+                                                />
+                                            )}
                                         />
                                     </Grid.Col>
                                     <Grid.Col span={{ base: 12, sm: 6 }}>
-                                        <TimeInput
-                                            label="Start Time"
-                                            leftSection={<IconClock size={16} />}
-                                            value={formData.startTime}
-                                            onChange={(e) => handleFormChange('startTime', e.target.value)}
-                                            required
+                                        <Controller
+                                            name="startTime"
+                                            control={control}
+                                            render={({ field }) => (
+                                                <TimeInput
+                                                    label="Start Time"
+                                                    leftSection={<IconClock size={16} />}
+                                                    error={errors.startTime?.message}
+                                                    {...field}
+                                                />
+                                            )}
                                         />
                                     </Grid.Col>
                                     <Grid.Col span={{ base: 12, sm: 6 }}>
-                                        <TimeInput
-                                            label="End Time"
-                                            leftSection={<IconClock size={16} />}
-                                            value={formData.endTime}
-                                            onChange={(e) => handleFormChange('endTime', e.target.value)}
-                                            required
+                                        <Controller
+                                            name="endTime"
+                                            control={control}
+                                            render={({ field }) => (
+                                                <TimeInput
+                                                    label="End Time"
+                                                    leftSection={<IconClock size={16} />}
+                                                    error={errors.endTime?.message}
+                                                    {...field}
+                                                />
+                                            )}
                                         />
                                     </Grid.Col>
                                 </Grid>
 
-                                <Stack>
-                                    <Text fw={500} size="sm">Select Courts</Text>
-                                    <SimpleGrid cols={{ base: 2, sm: 4 }}>
-                                        {COURTS.map((court) => (
-                                            <Button
-                                                key={court}
-                                                variant={formData.selectedCourts.includes(court) ? 'filled' : 'light'}
-                                                onClick={() => {
-                                                    const newCourts = formData.selectedCourts.includes(court)
-                                                        ? formData.selectedCourts.filter(c => c !== court)
-                                                        : [...formData.selectedCourts, court];
-                                                    handleFormChange('selectedCourts', newCourts);
-                                                }}
-                                            >
-                                                {court}
-                                            </Button>
-                                        ))}
-                                    </SimpleGrid>
-                                </Stack>
+
                             </Stack>
                         </Card>
 
@@ -256,68 +331,86 @@ const CreateParty = () => {
                             <Stack>
                                 <Stack>
                                     <Text fw={500} size="sm">Maximum Participants</Text>
-                                    <Group>
-                                        <ActionIcon
-                                            variant="light"
-                                            onClick={() => handleFormChange('maxParticipants', Math.max(1, formData.maxParticipants - 1))}
-                                        >
-                                            <IconMinus size={16} />
-                                        </ActionIcon>
-                                        <NumberInput
-                                            hideControls
-                                            min={1}
-                                            max={100}
-                                            value={formData.maxParticipants}
-                                            onChange={(value) => handleFormChange('maxParticipants', typeof value === 'number' ? value : 1)}
-                                            style={{ width: '80px' }}
-                                        />
-                                        <ActionIcon
-                                            variant="light"
-                                            onClick={() => handleFormChange('maxParticipants', formData.maxParticipants + 1)}
-                                        >
-                                            <IconPlus size={16} />
-                                        </ActionIcon>
-                                    </Group>
+                                    <Controller
+                                        name="maxParticipants"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <Group>
+                                                <ActionIcon
+                                                    variant="light"
+                                                    onClick={() => field.onChange(Math.max(2, field.value - 1))}
+                                                >
+                                                    <IconMinus size={16} />
+                                                </ActionIcon>
+                                                <NumberInput
+                                                    hideControls
+                                                    min={2}
+                                                    max={100}
+                                                    error={errors.maxParticipants?.message}
+                                                    style={{ width: '80px' }}
+                                                    {...field}
+                                                />
+                                                <ActionIcon
+                                                    variant="light"
+                                                    onClick={() => field.onChange(Math.min(100, field.value + 1))}
+                                                >
+                                                    <IconPlus size={16} />
+                                                </ActionIcon>
+                                            </Group>
+                                        )}
+                                    />
                                 </Stack>
 
-                                <NumberInput
-                                    label="Cost per Person"
-                                    placeholder="0"
-                                    min={0}
-                                    value={formData.costPerPerson}
-                                    onChange={(value) => handleFormChange('costPerPerson', typeof value === 'number' ? value : 0)}
-                                    leftSection="$"
+                                <Controller
+                                    name="costPerPerson"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <NumberInput
+                                            label="Cost per Person"
+                                            placeholder="0"
+                                            min={0}
+                                            leftSection="฿"
+                                            error={errors.costPerPerson?.message}
+                                            {...field}
+                                        />
+                                    )}
                                 />
 
                                 <Stack>
                                     <Text fw={500} size="sm">Rules</Text>
-                                    {formData.rules.map((rule, index) => (
-                                        <Group key={index}>
-                                            <TextInput
-                                                style={{ flex: 1 }}
-                                                value={rule}
-                                                onChange={(e) => {
-                                                    const newRules = [...formData.rules];
-                                                    newRules[index] = e.target.value;
-                                                    handleFormChange('rules', newRules);
-                                                }}
-                                            />
-                                            <ActionIcon
-                                                color="red"
-                                                variant="light"
-                                                onClick={() => {
-                                                    const newRules = formData.rules.filter((_, i) => i !== index);
-                                                    handleFormChange('rules', newRules);
-                                                }}
-                                            >
-                                                <IconTrash size={16} />
-                                            </ActionIcon>
-                                        </Group>
-                                    ))}
+                                    <Controller
+                                        name="rules"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <>
+                                                {field.value.map((rule, index) => (
+                                                    <Group key={index}>
+                                                        <TextInput
+                                                            style={{ flex: 1 }}
+                                                            value={rule}
+                                                            error={errors.rules?.[index]?.message}
+                                                            onChange={(e) => {
+                                                                const newRules = [...field.value];
+                                                                newRules[index] = e.target.value;
+                                                                field.onChange(newRules);
+                                                            }}
+                                                        />
+                                                        <ActionIcon
+                                                            color="red"
+                                                            variant="light"
+                                                            onClick={() => handleRemoveRule(index)}
+                                                        >
+                                                            <IconTrash size={16} />
+                                                        </ActionIcon>
+                                                    </Group>
+                                                ))}
+                                            </>
+                                        )}
+                                    />
                                     <Button
                                         variant="light"
                                         leftSection={<IconPlus size={16} />}
-                                        onClick={() => handleFormChange('rules', [...formData.rules, ''])}
+                                        onClick={handleAddRule}
                                     >
                                         Add Rule
                                     </Button>
@@ -331,22 +424,21 @@ const CreateParty = () => {
                                                 Participants can cancel up to 2 hours before start
                                             </Text>
                                         </div>
-                                        <Switch
-                                            checked={formData.allowCancellation}
-                                            onChange={(event) => handleFormChange('allowCancellation', event.currentTarget.checked)}
-                                            size="lg"
+                                        <Controller
+                                            name="allowCancellation"
+                                            control={control}
+                                            render={({ field }) => (
+                                                <Switch
+                                                    checked={field.value}
+                                                    onChange={(event) => field.onChange(event.currentTarget.checked)}
+                                                    size="lg"
+                                                />
+                                            )}
                                         />
                                     </Group>
                                 </Paper>
                             </Stack>
                         </Card>
-
-                        {/* Form Validation */}
-                        {!formData.selectedCourts.length && (
-                            <Alert color="red" radius="md">
-                                Please select at least one court
-                            </Alert>
-                        )}
 
                         {/* Guidelines */}
                         <Alert
@@ -368,15 +460,16 @@ const CreateParty = () => {
                             <Button
                                 variant="light"
                                 size="lg"
-                                onClick={() => window.history.back()}
+                                onClick={() => router.back()}
+                                disabled={loading}
                             >
                                 Cancel
                             </Button>
                             <Button
                                 type="submit"
                                 size="lg"
+                                loading={loading}
                                 leftSection={<IconCheck size={20} />}
-                                disabled={!formData.selectedCourts.length}
                             >
                                 Create Party
                             </Button>

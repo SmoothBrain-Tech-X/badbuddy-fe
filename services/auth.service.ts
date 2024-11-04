@@ -1,6 +1,6 @@
 // src/services/auth.ts
 import Cookies from 'js-cookie';
-import { AuthResponse, LoginDTO, RegisterUserDTO, User } from '@/services';
+import { AuthResponse, LoginDTO, RegisterUserDTO, User, UserProfileDTO } from '@/services';
 import { Api } from '@/services/api';
 
 export class AuthService {
@@ -36,9 +36,9 @@ export class AuthService {
     }
   }
 
-  async getProfile(): Promise<User> {
+  async getProfile(): Promise<UserProfileDTO> {
     try {
-      const user = await this.api.get<User>('/users/profile');
+      const user = await this.api.get<UserProfileDTO>('/users/profile');
       if (!user) {
         throw new Error('Failed to fetch user profile');
       }

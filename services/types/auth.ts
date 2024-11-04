@@ -38,6 +38,7 @@ export interface AuthResponse {
 export type PlayerLevel = 'beginner' | 'intermediate' | 'advanced';
 export type PlayingHand = 'left' | 'right';
 export type Gender = 'male' | 'female' | 'other';
+type UserRole = 'user' | 'admin';
 
 // src/types/register.ts
 export interface RegisterFormData {
@@ -83,3 +84,29 @@ export const GENDERS = [
   { value: 'female', label: 'Female' },
   { value: 'other', label: 'Other' },
 ] as const;
+
+interface VenueId {
+  id: string;
+}
+
+export interface UserProfileDTO {
+  id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  phone: string;
+  play_level: PlayerLevel;
+  location: string;
+  bio: string;
+  gender: Gender;
+  play_hand: PlayingHand;
+  avatar_url: string;
+  last_active_at: string;
+  role: UserRole;
+  hosted_sessions: number;
+  joined_sessions: number;
+  average_rating: number;
+  total_reviews: number;
+  regular_partners: number;
+  venues: VenueId[];
+}

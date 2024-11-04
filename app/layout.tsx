@@ -29,7 +29,7 @@ export default function RootLayout({ children }: { children: any }) {
           <MainProvider>
             <AuthProvider>
               <Toaster
-                position="top-right"
+                position="bottom-right"
                 toastOptions={{
                   duration: 3000,
                   loading: {
