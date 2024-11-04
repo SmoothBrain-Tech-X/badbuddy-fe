@@ -174,7 +174,7 @@ const VenuesSection: React.FC = () => {
   const navigate = useRouter();
   const getVenues = useGetVenuesSearch({});
   return (
-    <Card shadow="sm" radius="md" withBorder>
+    <Card>
       <Group justify="space-between" mb="md">
         <Title order={3}>Popular Venues</Title>
         <Button
@@ -267,14 +267,10 @@ const QuickActionCard: React.FC<{ action: QuickAction }> = ({
   </Link>
 );
 
-const RecentPlayers: React.FC = () => (
-  <Card shadow="sm" radius="md" withBorder>
-    <Image radius="md" src="/ad01.jpeg" />
-  </Card>
-);
+const RecentPlayers: React.FC = () => <Image radius="md" src="/ad01.jpeg" />;
 
 const QuickActions: React.FC = () => (
-  <Card shadow="sm" radius="md" withBorder>
+  <Card>
     <Title order={3} mb="md">
       Quick Actions
     </Title>
@@ -305,7 +301,7 @@ const HomePage: React.FC = () => {
         <Grid gutter="lg">
           <Grid.Col span={{ base: 12, lg: 8 }}>
             <Stack>
-              <Card radius="md" withBorder>
+              <Card>
                 <Tabs value={activeTab} onChange={(value) => setActiveTab(value || 'recommended')}>
                   <Tabs.List>
                     <Tabs.Tab value="recommended" leftSection={<IconTarget size={16} />}>
@@ -332,14 +328,6 @@ const HomePage: React.FC = () => {
                                 </Group>
                               </div>
                             </Group>
-                            {/* <Stack gap="xs" align="flex-end">
-                              <Badge>
-                                {activity.participants.current}/{activity.participants.max} joined
-                              </Badge>
-                              <Button variant="light" size="xs">
-                                View Details
-                              </Button>
-                            </Stack> */}
                           </Group>
                         </Paper>
                       ))}
