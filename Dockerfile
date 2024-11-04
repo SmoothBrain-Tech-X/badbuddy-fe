@@ -24,7 +24,7 @@ COPY . .
 
 # ENV NEXT_TELEMETRY_DISABLED 1
 
-RUN SKIP_ENV_VALIDATION=1 yarn run build
+RUN yarn build
 
 ##### RUNNER
 
