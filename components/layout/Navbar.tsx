@@ -165,7 +165,6 @@ const Navbar = () => {
         style={{
           top: 0,
           left: 0,
-          position: 'fixed',
           right: 0,
           zIndex: 1000,
           backgroundColor: 'var(--mantine-color-body)',

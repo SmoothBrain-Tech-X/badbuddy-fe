@@ -13,7 +13,7 @@ interface ContactCardProps {
 }
 
 const ContactCard = ({ venue, onContact }: ContactCardProps) => (
-    <Card shadow="sm" radius="md" withBorder>
+    <Card radius="md" >
         <Stack>
             <Title order={3}>Contact</Title>
             <List spacing="md">
