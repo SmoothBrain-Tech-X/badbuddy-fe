@@ -12,7 +12,7 @@ WORKDIR /app
 
 COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml\* ./
 
-RUN yarn
+RUN yarn install
 
 ##### BUILDER
 
