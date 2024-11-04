@@ -72,7 +72,7 @@ const LoginContent = () => {
   };
 
   return (
-    <Box bg="gray.0" mih="89vh">
+    <Box bg="gray.0" mih="100vh">
       <Container size="xs" py="xl">
         <Stack gap="lg">
           <Stack align="center">

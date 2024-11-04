@@ -1,8 +1,8 @@
 import '@mantine/core/styles.css';
 import '@mantine/dates/styles.css';
 
-import { Anuphan } from "next/font/google";
 import React from 'react';
+import { Anuphan } from 'next/font/google';
 import { Toaster } from 'react-hot-toast';
 import { ColorSchemeScript, MantineProvider } from '@mantine/core';
 import { ModalsProvider } from '@mantine/modals';
@@ -19,10 +19,9 @@ export const metadata = {
 };
 
 const fontSans = Anuphan({
-    subsets: ["latin"],
-    variable: "--font-sans",
-  });
-  
+  subsets: ['latin'],
+  variable: '--font-sans',
+});
 
 export default function RootLayout({ children }: { children: any }) {
   return (
@@ -37,23 +36,21 @@ export default function RootLayout({ children }: { children: any }) {
       </head>
       <body className={fontSans.className}>
         <MantineProvider theme={theme}>
-          <MainProvider>
-            <ModalsProvider>
-              <AuthProvider>
-                <Notifications position="top-right" zIndex={2077} />
-                <Toaster
-                  position="bottom-right"
-                  toastOptions={{
-                    duration: 3000,
-                    loading: {
-                      duration: Infinity,
-                    },
-                  }}
-                />
-                {children}
-              </AuthProvider>
-            </ModalsProvider>
-          </MainProvider>
+          <ModalsProvider>
+            <AuthProvider>
+              <Notifications position="top-right" zIndex={2077} />
+              <Toaster
+                position="bottom-right"
+                toastOptions={{
+                  duration: 3000,
+                  loading: {
+                    duration: Infinity,
+                  },
+                }}
+              />
+              {children}
+            </AuthProvider>
+          </ModalsProvider>
         </MantineProvider>
       </body>
     </html>
