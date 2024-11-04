@@ -167,6 +167,7 @@ const SearchSection: React.FC<{
   <Grid>
     <Grid.Col span={{ base: 12, sm: 6, md: 8 }}>
       <TextInput
+        size="lg"
         placeholder="Search venues..."
         value={search}
         onChange={(e) => onSearchChange(e.target.value)}
@@ -176,6 +177,7 @@ const SearchSection: React.FC<{
     <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
       <Group grow>
         <Select
+          size="lg"
           placeholder="Select district"
           data={DISTRICTS}
           value={selectedDistrict}
@@ -184,6 +186,7 @@ const SearchSection: React.FC<{
         />
         <Button
           variant="light"
+          size="lg"
           leftSection={<IconAdjustments size={16} />}
           onClick={onToggleFilters}
           rightSection={
@@ -299,7 +302,7 @@ const VenueCard: React.FC<{ venue: Venue }> = ({ venue }) => {
   const router = useRouter();
 
   return (
-    <Card shadow="sm" radius="md" withBorder>
+    <Card radius="md" withBorder>
       <Card.Section>
         <Image src={venue.image} height={200} alt={venue.name} />
       </Card.Section>
@@ -564,7 +567,7 @@ const VenueListPage: React.FC = () => {
         </Stack>
 
         {/* Search and Filters */}
-        <Paper shadow="sm" p="md" radius="md" mb="xl">
+        <Paper p="md" radius="md" mb="xl">
           <Stack>
             <SearchSection
               search={search}
