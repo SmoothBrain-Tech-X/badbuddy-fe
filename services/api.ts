@@ -300,7 +300,8 @@ export class Api {
 }
 
 // Environment check and instance creation
-const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8004/api';
+const apiBaseUrl =
+  process.env.NEXT_PUBLIC_API_URL || 'https://general-badbuddy-be.tu4rl4.easypanel.host/api';
 if (!apiBaseUrl) {
   throw new Error('NEXT_PUBLIC_API_URL environment variable is not defined');
 }

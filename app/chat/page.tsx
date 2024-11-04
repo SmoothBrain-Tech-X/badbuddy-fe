@@ -65,7 +65,7 @@ interface ChatState {
 // ============================================================================
 
 const CONFIG = {
-    API_BASE_URL: 'http://localhost:8004',
+    API_BASE_URL: 'https://general-badbuddy-be.tu4rl4.easypanel.host',
     WS_BASE_URL: 'ws://localhost:8004',
     CURRENT_USER_ID: '4bce920d-9350-42fd-b9ce-9ea2ddf2fe24',
 } as const;

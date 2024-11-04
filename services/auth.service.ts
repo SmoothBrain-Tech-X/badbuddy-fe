@@ -226,5 +226,5 @@ export class AuthService {
 
 // Single instance
 export const authService = new AuthService(
-  new Api(process.env.API_BASE_URL || 'http://localhost:8004/api')
+  new Api(process.env.API_BASE_URL || 'https://general-badbuddy-be.tu4rl4.easypanel.host/api')
 );

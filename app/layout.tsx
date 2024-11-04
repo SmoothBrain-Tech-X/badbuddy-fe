@@ -2,13 +2,13 @@ import '@mantine/core/styles.css';
 import '@mantine/dates/styles.css';
 
 import React from 'react';
-import { ColorSchemeScript, MantineProvider } from '@mantine/core';
 import { Toaster } from 'react-hot-toast';
-import { theme } from '../theme';
-import MainProvider from '@/providers/MainProvider';
-import { AuthProvider } from '@/providers/AuthProvider';
-import { Notifications } from '@mantine/notifications';
+import { ColorSchemeScript, MantineProvider } from '@mantine/core';
 import { ModalsProvider } from '@mantine/modals';
+import { Notifications } from '@mantine/notifications';
+import { AuthProvider } from '@/providers/AuthProvider';
+import MainProvider from '@/providers/MainProvider';
+import { theme } from '../theme';
 
 import '@mantine/notifications/styles.css'; // Don't forget to import styles
 
@@ -32,11 +32,8 @@ export default function RootLayout({ children }: { children: any }) {
         <MantineProvider theme={theme}>
           <MainProvider>
             <ModalsProvider>
-
               <AuthProvider>
-
                 <Notifications position="top-right" zIndex={2077} />
-
                 <Toaster
                   position="bottom-right"
                   toastOptions={{
@@ -46,9 +43,9 @@ export default function RootLayout({ children }: { children: any }) {
                     },
                   }}
                 />
-                {children}</AuthProvider>
+                {children}
+              </AuthProvider>
             </ModalsProvider>
-
           </MainProvider>
         </MantineProvider>
       </body>

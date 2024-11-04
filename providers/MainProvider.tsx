@@ -1,18 +1,23 @@
+'use client';
+
 import React from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Navbar from '@/components/layout/Navbar';
 
 type Props = {
-    children: React.ReactNode;
+  children: React.ReactNode;
 };
 
-const MainProvider = (props: Props) => (
-    <div>
-        <div style={{
-        }}>
-            <Navbar />
-        </div>
-        {props.children}
-    </div>
-);
+const MainProvider = (props: Props) => {
+  const queryClient = new QueryClient();
+  return (
+    <QueryClientProvider client={queryClient}>
+      <div style={{}}>
+        <Navbar />
+      </div>
+      {props.children}
+    </QueryClientProvider>
+  );
+};
 
 export default MainProvider;
