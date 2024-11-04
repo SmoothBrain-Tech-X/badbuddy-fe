@@ -46,7 +46,7 @@ interface SessionChatProps {
 // Config
 const CONFIG = {
     API_BASE_URL: 'https://general-badbuddy-be.tu4rl4.easypanel.host',
-    WS_BASE_URL: 'ws://localhost:8004',
+    WS_BASE_URL: 'ws://general-badbuddy-be.tu4rl4.easypanel.host',
 } as const
 
 // Message Component

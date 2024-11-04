@@ -87,7 +87,7 @@ const ParticipantCard = ({ participant }: { participant: Participant }) => {
                     </div>
                 </Group>
 
-                <Button
+                {/* <Button
                     variant="light"
                     leftSection={<IconMessageCircle size={16} />}
                     radius="md"
@@ -95,7 +95,7 @@ const ParticipantCard = ({ participant }: { participant: Participant }) => {
                     disabled={participant.status === 'cancelled'}
                 >
                     Chat
-                </Button>
+                </Button> */}
             </Group>
         </Paper>
     );

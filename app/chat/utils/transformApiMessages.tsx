@@ -2,7 +2,7 @@ import { ChatMessage, MessageStatus, MessageType } from '@/services';
 
 const CONFIG = {
     API_BASE_URL: 'https://general-badbuddy-be.tu4rl4.easypanel.host',
-    WS_BASE_URL: 'ws://localhost:8004',
+    WS_BASE_URL: 'ws://general-badbuddy-be.tu4rl4.easypanel.host',
     CURRENT_USER_ID: '4bce920d-9350-42fd-b9ce-9ea2ddf2fe24',
 } as const;
 

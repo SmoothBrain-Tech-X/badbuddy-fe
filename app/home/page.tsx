@@ -215,8 +215,11 @@ const VenuesSection: React.FC = () => {
                     </Text>
                   </Group>
                 </Group>
-
-                <Button onClick={() => navigate.push(`/venues/${venue.id}`)} variant="light" fullWidth>
+                <Button
+                  onClick={() => navigate.push(`/venues/${venue.id}`)}
+                  variant="light"
+                  fullWidth
+                >
                   View Details
                 </Button>
               </Stack>

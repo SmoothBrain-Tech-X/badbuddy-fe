@@ -1,5 +1,5 @@
-import _ from "lodash";
-import { axiosAPIWithoutAuth } from "utils/axios";
+import _ from 'lodash';
+import { axiosAPIWithoutAuth } from '@/utils/axios';
 
 interface RootObject {
   id: string;
@@ -51,9 +51,7 @@ export type IGetVenue = {
 
 const getVenue = async (props: IGetVenue) => {
   try {
-    const res = await axiosAPIWithoutAuth.get<RootObject>(
-      `/venues/${props.venue_id}`,
-    );
+    const res = await axiosAPIWithoutAuth.get<RootObject>(`/venues/${props.venue_id}`);
     return res.data;
   } catch (error) {
     throw error;
