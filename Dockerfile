@@ -1,52 +1,35 @@
-##### DEPENDENCIES
+# Use an official Node.js runtime as a parent image
+FROM node:18-alpine AS base
 
-FROM --platform=linux/amd64 node:20-alpine AS deps
-RUN apk add --no-cache libc6-compat openssl build-base python3
-RUN apk add --no-cache \
-    udev \
-    ttf-freefont \
-    chromium
+# Set the working directory
 WORKDIR /app
 
-# Install dependencies based on the preferred package manager
+# Copy package.json and pnpm-lock.yaml to the working directory
+COPY package.json pnpm-lock.yaml ./
 
-COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml\* ./
+# Install pnpm globally
+RUN yarn global add pnpm
 
-RUN yarn install
+# Install dependencies
+RUN pnpm install --frozen-lockfile
 
-##### BUILDER
-
-FROM --platform=linux/amd64 node:20-alpine AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/package.json ./package.json
+# Copy the rest of the application code
 COPY . .
 
-# ENV NEXT_TELEMETRY_DISABLED 1
+# Build the application
+RUN SKIP_ENV_VALIDATION=1 pnpm run build
 
-RUN yarn build
+# Use a smaller image for the final build
+FROM node:18-alpine AS final
 
-##### RUNNER
-
-FROM --platform=linux/amd64 node:20-alpine AS runner
-RUN apk add --no-cache \
-    udev \
-    ttf-freefont \
-    chromium
+# Set the working directory
 WORKDIR /app
 
-ENV NODE_ENV production
+# Copy the built application from the previous stage
+COPY --from=base /app ./
 
-# ENV NEXT_TELEMETRY_DISABLED 1
-
-COPY --from=builder /app/next.config.js ./
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/package.json ./package.json
-
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
-
+# Expose the port the app runs on
 EXPOSE 3000
-ENV PORT 3000
 
-CMD ["server.js"]
+# Start the application
+CMD ["pnpm", "start"]
