@@ -1,39 +1,78 @@
-# Mantine Next.js template
+# BadBuddy
 
-This is a template for [Next.js](https://nextjs.org/) app router + [Mantine](https://mantine.dev/).
-If you want to use pages router instead, see [next-pages-template](https://github.com/mantinedev/next-pages-template).
+A web application that connects badminton players, helps them find courts and organize games together.
 
 ## Features
 
-This template comes with the following features:
+- **User Management**
+  - User registration and authentication 
+  - Profile management with player stats
+  - Playing preferences and skill levels
 
-- [PostCSS](https://postcss.org/) with [mantine-postcss-preset](https://mantine.dev/styles/postcss-preset)
-- [TypeScript](https://www.typescriptlang.org/)
-- [Storybook](https://storybook.js.org/)
-- [Jest](https://jestjs.io/) setup with [React Testing Library](https://testing-library.com/docs/react-testing-library/intro)
-- ESLint setup with [eslint-config-mantine](https://github.com/mantinedev/eslint-config-mantine)
+- **Venues**
+  - Browse and search badminton courts
+  - View venue details, photos and facilities
+  - Real-time court availability
+  - Court booking system
+  - Reviews and ratings
 
-## npm scripts
+- **Social Features**
+  - Create and join badminton sessions
+  - Chat with other players
+  - Players matchmaking
+  - Session management
 
-### Build and dev scripts
+## Tech Stack
 
-- `dev` – start dev server
-- `build` – bundle application for production
-- `analyze` – analyzes application bundle with [@next/bundle-analyzer](https://www.npmjs.com/package/@next/bundle-analyzer)
+- **Frontend**
+  - Next.js 15
+  - React 18
+  - Mantine UI v7
+  - TypeScript
+  - React Query
+  - Zustand
+  - React Hook Form + Zod
 
-### Testing scripts
+- **Development Tools**
+  - ESLint
+  - Prettier
+  - Jest + React Testing Library
+  - Storybook
 
-- `typecheck` – checks TypeScript types
-- `lint` – runs ESLint
-- `prettier:check` – checks files with Prettier
-- `jest` – runs jest tests
-- `jest:watch` – starts jest watch
-- `test` – runs `jest`, `prettier:check`, `lint` and `typecheck` scripts
+## Getting Started
 
-### Other scripts
+1. Clone the repository:
+```bash
+git clone https://github.com/SmoothBrain-Tech-X/badbuddy-fe.git
+```
 
-- `storybook` – starts storybook dev server
-- `storybook:build` – build production storybook bundle to `storybook-static`
-- `prettier:write` – formats all files with Prettier
-# badbuddy-fe
-# badbuddy-fe
+2. Install dependencies:
+```bash
+npm install
+# or
+yarn install
+```
+
+3. Start the development server:
+```bash
+npm run dev
+# or
+yarn dev
+```
+
+4. Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## Scripts
+
+- `dev` - Start development server
+- `build` - Build for production
+- `test` - Run tests
+- `lint` - Run ESLint
+- `typecheck` - Check TypeScript types
+- `storybook` - Start Storybook development server
+- `prettier:write` - Format code with Prettier
+
+
+## License
+
+This project is licensed under the [MIT License](LICENCE) - see the LICENSE file for details.
