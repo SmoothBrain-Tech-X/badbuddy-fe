@@ -75,10 +75,7 @@ const PartyView: React.FC = () => {
     }
 
     //check party full
-    if (
-      (getSession.data?.data.participants?.length ?? 0) >=
-      (getSession.data?.data.max_participants ?? 0)
-    ) {
+    if (getSession.data?.data.confirmed_players === getSession.data?.data.max_participants) {
       return true;
     }
 
@@ -344,7 +341,7 @@ const PartyView: React.FC = () => {
 
             {/* Sidebar */}
             <Grid.Col span={{ base: 12, md: 4 }}>
-              <Card shadow="sm" radius="md" withBorder style={{ position: 'sticky', top: 20 }}>
+              <Card radius="md" withBorder style={{ position: 'sticky', top: 20 }}>
                 <Card.Section p="md" bg="blue.0">
                   <Group>
                     <div>
@@ -361,7 +358,7 @@ const PartyView: React.FC = () => {
 
                 <Stack p="md" gap="md">
                   <ParticipantsProgress
-                    current={getSession.data?.data.participants.length ?? 0}
+                    current={getSession.data?.data.confirmed_players ?? 0}
                     max={getSession.data?.data.max_participants ?? 0}
                   />
 
@@ -371,7 +368,7 @@ const PartyView: React.FC = () => {
                       Leave
                     </Button>
                   ) : (
-                    <Button onClick={onJoin}>Join</Button>
+                    <Button disabled={checkDisabled()} onClick={onJoin}>Join</Button>
                   )}
                 </Stack>
               </Card>

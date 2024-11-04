@@ -302,7 +302,7 @@ const VenueCard: React.FC<{ venue: Venue }> = ({ venue }) => {
   const router = useRouter();
 
   return (
-    <Card radius="md" withBorder>
+    <Card radius="md" >
       <Card.Section>
         <Image src={venue.image} height={200} alt={venue.name} />
       </Card.Section>
