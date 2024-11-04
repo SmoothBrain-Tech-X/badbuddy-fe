@@ -164,7 +164,10 @@ const VenueDetails = ({ venueData, facilities, reviews, onBookCourt, onSubmitRev
                     <Text size="xl" fw={600} className="text-blue-600">
                         Map & Directions
                     </Text>
-                    <GoogleMapsEmbed />
+                    <GoogleMapsEmbed
+                        latitude={venueData.latitude}
+                        longitude={venueData.longitude}
+                    />
 
                 </Stack>
             </Card>

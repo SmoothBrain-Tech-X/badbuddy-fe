@@ -76,7 +76,7 @@ export interface SessionData extends BaseEntity {
   player_level: string;
   max_participants: number;
   cost_per_person: number;
-  status: 'pending' | 'confirmed' | 'cancelled';
+  status: 'pending' | 'confirmed' | 'cancelled' | 'open' | 'closed';
   allow_cancellation: boolean;
   cancellation_deadline_hours: number;
   confirmed_players: number;

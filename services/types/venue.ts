@@ -41,6 +41,8 @@ export interface Venue extends BaseEntity {
   courts: Court[];
   facilities: facility[];
   rules: rule[];
+  latitute: number;
+  longitude: number;
 }
 
 export interface VenueDTO {

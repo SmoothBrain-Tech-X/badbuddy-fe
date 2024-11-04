@@ -26,26 +26,29 @@ import {
 } from '@mantine/core';
 import {
     IconMapPin,
-    IconUsers,
     IconArrowLeft,
-    IconMessageCircle,
     IconSend,
     IconCrown,
     IconShare,
-    IconHeart,
     IconThumbUp,
     IconCalendar,
     IconAlertCircle,
     IconChevronRight,
     IconProps,
+    IconMoneybag,
+    IconBarbell,
+    IconMessageCircle, IconEye, IconHeart, IconUsers, IconCreditCard
 } from '@tabler/icons-react';
+import { useParams } from 'next/navigation';
+
 import { SessionData, Participant, sessionService } from '@/services';
 import ParticipantCard from './components/ParticipantCard';
 import SafetyGuidelines from './components/SafetyGuidelines';
-import ParticipantsProgress from './components/ParticipantsProgress';
 import MessageCard from './components/MessageCard';
 import PartyHeader from './components/PartyHeader';
-import InfoItem from './components/InfoItem';
+import StatsGrid from './components/StatsGrid';
+import FeeCard from './components/FeeCard';
+import ParticipantsProgress from './components/ParticipantsProgress';
 
 // Types
 interface Host {
@@ -120,6 +123,8 @@ export const DEFAULT_PARTY_DATA: SessionData = {
 
 // Main Component
 const PartyView: React.FC = () => {
+    const params = useParams();
+    const sessionId = params.id as string;
     const [message, setMessage] = useState('');
     const [isLiked, setIsLiked] = useState(false);
     const [activeTab, setActiveTab] = useState<string>('chat');
@@ -128,7 +133,7 @@ const PartyView: React.FC = () => {
 
     const fetchSessionData = async () => {
         try {
-            const response = await sessionService.getById("0405f815-1a23-4c46-b89a-53c940b7d684")
+            const response = await sessionService.getById(sessionId)
             setSessionDetails(response?.data || DEFAULT_PARTY_DATA)
         }
         catch (error) {
@@ -154,7 +159,15 @@ const PartyView: React.FC = () => {
                 return 'blue';
         }
     };
-
+    const formatDateTime = (date: string | Date, start: string, end: string): string => {
+        const options: Intl.DateTimeFormatOptions = {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+        };
+        const formattedDate = new Date(date).toLocaleDateString('th-TH', options);
+        return `${formattedDate}\n${start} - ${end} น.`;
+    };
     const partyDetails: PartyDetails = {
         id: "0405f815-1a23-4c46-b89a-53c940b7d684",
         title: "Evening Badminton Session",
@@ -209,110 +222,174 @@ const PartyView: React.FC = () => {
 
                 <Grid gutter="lg">
                     <Grid.Col span={{ base: 12, md: 8 }}>
-                        <Card shadow="sm" radius="md" mb="lg" p={0} withBorder>
+
+                        <Card shadow="sm" radius="lg" p={0} withBorder className="overflow-hidden">
                             <PartyHeader
                                 party={sessionDetails}
                                 isLiked={isLiked}
                                 onLikeToggle={() => setIsLiked(!isLiked)}
                             />
 
-                            {/* Status Badge */}
-                            {sessionDetails.status && (
-                                <Box p="md">
-                                    <Badge
-                                        color={getStatusColor(sessionDetails.status)}
-                                        size="lg"
-                                        variant="filled"
-                                    >
-                                        {sessionDetails.status.toUpperCase()}
-                                    </Badge>
-                                </Box>
-                            )}
+                            {/* Status and Level Tags */}
+                            <Box p="md" className="flex gap-2">
+                                <Badge
+                                    color={getStatusColor(sessionDetails.status)}
+                                    size="lg"
+                                    variant="filled"
+                                    radius="md"
+                                >
+                                    {sessionDetails.status.toUpperCase()}
+                                </Badge>
+                                <Badge
+                                    color="blue"
+                                    size="lg"
+                                    variant="light"
+                                    radius="md"
+                                >
+                                    {sessionDetails.player_level.toUpperCase()} LEVEL
+                                </Badge>
+                            </Box>
 
-                            <Stack p="xl">
-                                <Grid>
+                            <Stack p="xl" gap="xl">
+                                {/* Info Grid */}
+                                <Grid gutter="lg">
                                     {[
-                                        { icon: IconMapPin, label: 'Location', value: partyDetails.location },
-                                        { icon: IconCalendar, label: 'Date & Time', value: partyDetails.time },
-                                        { icon: IconUsers, label: 'Participants', value: `${partyDetails.participants.current}/${partyDetails.participants.max}` },
+                                        {
+                                            icon: IconMapPin,
+                                            label: 'Venue',
+                                            value: `${sessionDetails.venue_name}\n${sessionDetails.venue_location}`,
+                                            color: 'emerald'
+                                        },
+                                        {
+                                            icon: IconCalendar,
+                                            label: 'Date & Time',
+                                            value: formatDateTime(sessionDetails.session_date, sessionDetails.start_time, sessionDetails.end_time),
+                                            color: 'blue'
+                                        },
+
                                     ].map((item, index) => (
-                                        <Grid.Col span={{ base: 12, sm: 4 }} key={index}>
-                                            <InfoItem {...item} />
+                                        <Grid.Col span={{ base: 12, sm: 6, md: 6 }} key={index}>
+                                            <Paper
+                                                shadow="sm"
+                                                p="lg"
+                                                className={`h-32 flex flex-col items-center justify-center text-center rounded-xl bg-gradient-to-br from-${item.color}-50 to-white hover:shadow-md transition-all duration-200 hover:scale-[1.02]`}
+                                            >
+                                                <item.icon
+                                                    className={`w-8 h-8 mb-3 text-${item.color}-500`}
+                                                    strokeWidth={1.5}
+                                                />
+                                                <div className="text-sm font-medium text-gray-500 mb-1.5">{item.label}</div>
+                                                <div className="text-lg font-bold text-gray-800 whitespace-pre-line">{item.value}</div>
+                                            </Paper>
                                         </Grid.Col>
                                     ))}
                                 </Grid>
 
-                                <div>
-                                    <Text fw={500} mb="xs" size="lg">Description</Text>
-                                    <Paper p="md" radius="md" bg="blue.0">
-                                        <Text>{sessionDetails.description}</Text>
+                                {/* Description */}
+                                <Box>
+                                    <Text fw={600} mb="xs" size="lg" className="text-gray-800">Description</Text>
+                                    <Paper p="md" radius="md" className="bg-blue-50 border border-blue-100">
+                                        <Text className="text-gray-700">{sessionDetails.description}</Text>
                                     </Paper>
-                                </div>
+                                </Box>
 
-                                <div>
-                                    <Text fw={500} mb="xs" size="lg">What to Bring</Text>
+                                {/* What to Bring */}
+                                <Box>
+                                    <Text fw={600} mb="xs" size="lg" className="text-gray-800">What to Bring</Text>
                                     <Grid>
                                         {['Badminton Racket', 'Sports Attire & Shoes'].map((item, index) => (
-                                            <Grid.Col span={6} key={index}>
-                                                <Paper p="md" radius="md" bg="green.0">
+                                            <Grid.Col span={{ base: 12, sm: 6 }} key={index}>
+                                                <Paper p="md" radius="md" className="bg-green-50 border border-green-100">
                                                     <Group>
-                                                        <ThemeIcon color="green" variant="light">
-                                                            <IconThumbUp size={16} />
+                                                        <ThemeIcon color="green" variant="light" size="lg" radius="xl">
+                                                            <IconThumbUp size={18} />
                                                         </ThemeIcon>
-                                                        <Text>{item}</Text>
+                                                        <Text className="text-gray-700">{item}</Text>
                                                     </Group>
                                                 </Paper>
                                             </Grid.Col>
                                         ))}
                                     </Grid>
-                                </div>
+                                </Box>
 
-                                <div>
-                                    <Text fw={500} mb="xs" size="lg">Important Notes</Text>
-                                    <Paper p="md" radius="md" bg="orange.0" withBorder>
+                                {/* Important Notes */}
+                                <Box>
+                                    <Text fw={600} mb="xs" size="lg" className="text-gray-800">Important Notes</Text>
+                                    <Paper p="md" radius="md" className="bg-orange-50 border border-orange-100">
                                         <Group align="flex-start">
-                                            <ThemeIcon color="orange" variant="light">
-                                                <IconAlertCircle size={16} />
+                                            <ThemeIcon color="orange" variant="light" size="lg" radius="xl">
+                                                <IconAlertCircle size={18} />
                                             </ThemeIcon>
-                                            <Text>Please arrive 15 minutes early for warm-up</Text>
+                                            <div className="space-y-2">
+                                                <Text className="text-gray-700">Please arrive 15 minutes early for warm-up</Text>
+                                                {sessionDetails.allow_cancellation && (
+                                                    <Text size="sm" className="text-gray-600">
+                                                        Cancellation allowed up to {sessionDetails.cancellation_deadline_hours} hours before the session
+                                                    </Text>
+                                                )}
+                                            </div>
                                         </Group>
                                     </Paper>
-                                </div>
+                                </Box>
                             </Stack>
                         </Card>
-
-                        <Card shadow="sm" radius="md" withBorder>
-                            <Tabs value={activeTab} onChange={(value) => setActiveTab(value || 'chat')}>
+                        <Card shadow="sm" radius="lg" withBorder className="overflow-hidden">
+                            <Tabs
+                                value={activeTab}
+                                onChange={(value) => setActiveTab(value || 'chat')}
+                                classNames={{
+                                    list: 'bg-gray-50 px-4 pt-2',
+                                    tab: 'font-medium transition-colors data-[active]:bg-white data-[active]:border-b-2 data-[active]:border-blue-500'
+                                }}
+                            >
                                 <Tabs.List>
-                                    <Tabs.Tab value="chat" leftSection={<IconMessageCircle size={16} />}>
+                                    <Tabs.Tab
+                                        value="chat"
+                                        leftSection={<IconMessageCircle size={18} />}
+                                        className="px-4 py-2"
+                                    >
                                         Chat
                                     </Tabs.Tab>
-                                    <Tabs.Tab value="participants" leftSection={<IconUsers size={16} />}>
-                                        Participants
+                                    <Tabs.Tab
+                                        value="participants"
+                                        leftSection={<IconUsers size={18} />}
+                                        className="px-4 py-2"
+                                    >
+                                        Participants ({sessionDetails.participants.length})
                                     </Tabs.Tab>
                                 </Tabs.List>
 
                                 <Tabs.Panel value="chat" p="md">
-                                    <Stack>
+                                    <Stack gap="lg">
                                         {messages.map((msg) => (
                                             <MessageCard key={msg.id} message={msg} />
                                         ))}
-                                        <Group mt="md">
+                                        <Group className="sticky bottom-0 bg-white pt-3">
                                             <TextInput
                                                 placeholder="Type a message..."
                                                 value={message}
                                                 onChange={(e) => setMessage(e.target.value)}
-                                                style={{ flex: 1 }}
+                                                className="flex-1"
+                                                size="md"
+                                                radius="xl"
+                                                rightSection={
+                                                    <ActionIcon
+                                                        variant="filled"
+                                                        color="blue"
+                                                        size={32}
+                                                        radius="xl"
+                                                        className="hover:scale-105 transition-transform"
+                                                    >
+                                                        <IconSend size={18} />
+                                                    </ActionIcon>
+                                                }
                                             />
-                                            <ActionIcon variant="filled" color="blue" size="lg">
-                                                <IconSend size={16} />
-                                            </ActionIcon>
                                         </Group>
                                     </Stack>
                                 </Tabs.Panel>
 
                                 <Tabs.Panel value="participants" p="md">
-                                    <Stack>
+                                    <Stack gap="xs">
                                         {sessionDetails.participants.map((participant) => (
                                             <ParticipantCard
                                                 key={participant.id}
@@ -346,96 +423,49 @@ const PartyView: React.FC = () => {
                                 </Group>
                             </Card.Section>
 
-                            <Stack p="md">
+                            <Stack p="md" gap="md">
                                 <ParticipantsProgress
-                                    current={partyDetails.participants.current}
-                                    max={partyDetails.participants.max}
+                                    current={sessionDetails.participants.length}
+                                    max={sessionDetails.max_participants}
                                 />
 
-                                <Grid>
-                                    <Grid.Col span={6}>
-                                        <Paper p="md" radius="md" ta="center" withBorder>
-                                            <Text fw={700} size="xl" style={{
-                                                background: 'linear-gradient(45deg, var(--mantine-color-blue-6), var(--mantine-color-indigo-6))',
-                                                WebkitBackgroundClip: 'text',
-                                                WebkitTextFillColor: 'transparent',
-                                            }}>
-                                                {partyDetails.views}
-                                            </Text>
-                                            <Text size="sm" c="dimmed">Views</Text>
-                                        </Paper>
-                                    </Grid.Col>
-                                    <Grid.Col span={6}>
-                                        <Paper p="md" radius="md" ta="center" withBorder>
-                                            <Text fw={700} size="xl" style={{
-                                                background: 'linear-gradient(45deg, var(--mantine-color-pink-6), var(--mantine-color-red-6))',
-                                                WebkitBackgroundClip: 'text',
-                                                WebkitTextFillColor: 'transparent',
-                                            }}>
-                                                {partyDetails.likes}
-                                            </Text>
-                                            <Text size="sm" c="dimmed">Likes</Text>
-                                        </Paper>
-                                    </Grid.Col>
-                                </Grid>
+                                <StatsGrid
+                                    views={partyDetails.views}
+                                    likes={partyDetails.likes}
+                                />
 
-                                <Paper p="md" radius="md" withBorder bg="green.0">
-                                    <Group justify="space-between" mb="xs">
-                                        <Text>Fee</Text>
-                                        <Text fw={500} c="green.7">{partyDetails.price}</Text>
-                                    </Group>
-                                    <Text size="sm" c="dimmed">Pay at the venue</Text>
-                                </Paper>
+                                <FeeCard price={partyDetails.price} />
 
                                 <Button
                                     size="lg"
-                                    color={sessionDetails.status === 'cancelled' ? 'gray' : partyDetails.isJoined ? 'gray' : 'blue'}
+                                    color={sessionDetails.status === 'cancelled' ? 'gray' : partyDetails.isJoined ? 'red' : 'blue'}
                                     variant={partyDetails.isJoined ? 'light' : 'filled'}
                                     disabled={sessionDetails.status === 'cancelled'}
-                                    style={{
-                                        transition: 'transform 0.2s ease',
-                                        '&:hover': {
-                                            transform: 'translateY(-2px)',
-                                        },
-                                    }}
+                                    radius="md"
+                                    className="transform transition-all duration-200 hover:-translate-y-1 active:translate-y-0 disabled:hover:transform-none"
                                 >
-                                    {sessionDetails.status === 'cancelled' ? 'Session Cancelled' :
-                                        partyDetails.isJoined ? 'Leave Party' : 'Join Party'}
+                                    {sessionDetails.status === 'cancelled' ? (
+                                        <Group gap="xs"><IconUsers size={18} />Session Cancelled</Group>
+                                    ) : partyDetails.isJoined ? (
+                                        <Group gap="xs"><IconUsers size={18} />Leave Party</Group>
+                                    ) : (
+                                        <Group gap="xs"><IconUsers size={18} />Join Party</Group>
+                                    )}
                                 </Button>
 
                                 <Button
                                     variant="light"
                                     size="lg"
-                                    leftSection={<IconMessageCircle size={16} />}
-                                    style={{
-                                        transition: 'transform 0.2s ease',
-                                        '&:hover': {
-                                            transform: 'translateY(-2px)',
-                                        },
-                                    }}
+                                    radius="md"
+                                    leftSection={<IconMessageCircle size={18} />}
+                                    className="transform transition-all duration-200 hover:-translate-y-1 active:translate-y-0"
                                 >
                                     Chat with Host
                                 </Button>
 
                                 <SafetyGuidelines />
 
-                                <Paper p="md" radius="md" withBorder>
-                                    <Stack>
-                                        <Text fw={500}>Additional Information</Text>
-                                        <Group>
-                                            <ThemeIcon color="blue" variant="light" size="sm">
-                                                <IconUsers size={12} />
-                                            </ThemeIcon>
-                                            <Text size="sm">Mixed skill levels welcome</Text>
-                                        </Group>
-                                        <Group>
-                                            <ThemeIcon color="blue" variant="light" size="sm">
-                                                <IconCalendar size={12} />
-                                            </ThemeIcon>
-                                            <Text size="sm">Regular weekly session</Text>
-                                        </Group>
-                                    </Stack>
-                                </Paper>
+
 
                                 <Paper p="md" radius="md" withBorder>
                                     <Text fw={500} mb="md">Share This Party</Text>

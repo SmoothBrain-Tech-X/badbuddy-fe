@@ -15,7 +15,12 @@ export class SessionService {
   }
 
   async getById(id: string): Promise<sessionResponseDTO | null> {
-    return this.api.get<sessionResponseDTO>(`/sessions/${id}`);
+    return this.api.get<sessionResponseDTO>(`/sessions/${id}/status`);
+  }
+
+  //get me
+  async getMe(): Promise<sessionResponseDTO | null> {
+    return this.api.get<sessionResponseDTO>('/sessions/user/me?include_history=false');
   }
 
   async search(params?: SessionFilters): Promise<SessionResponse | null> {

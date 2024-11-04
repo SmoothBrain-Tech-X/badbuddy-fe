@@ -34,6 +34,8 @@ import {
     IconUserCircle,
     IconChevronDown,
     IconPlus,
+    IconCalendar,
+    IconUsers,
 } from '@tabler/icons-react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
@@ -62,6 +64,18 @@ const Navbar = () => {
             icon: IconUserCircle,
             href: '/profile',
             onClick: () => handleNavigation('/profile')
+        },
+        {
+            label: 'My Bookings',
+            icon: IconCalendar,
+            href: '/bookings',
+            onClick: () => handleNavigation('/bookings')
+        },
+        {
+            label: 'My Parties',
+            icon: IconUsers,
+            href: '/parties/manage',
+            onClick: () => handleNavigation('/parties/manage')
         },
         {
             label: 'Settings',

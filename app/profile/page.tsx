@@ -3,392 +3,252 @@
 import { useEffect, useState } from 'react';
 import {
     Container,
-    Grid,
+    Title,
     Card,
     Group,
     Text,
     Badge,
     Button,
-    Avatar,
-    Tabs,
     Stack,
     Box,
     Paper,
-    Title,
-    ActionIcon,
+    Avatar,
+    Grid,
+    ThemeIcon,
 } from '@mantine/core';
 import {
     IconMapPin,
-    IconEdit,
-    IconTrophy,
     IconCalendarEvent,
-    IconStar,
-    IconMessageCircle,
-    IconShare,
-    IconHeart,
-    IconVenus,
-    IconUserCircle,
-    IconBlender,
-    IconWand,
+    IconUsers,
+    IconTrophy,
     IconMail,
     IconPhone,
+    IconEdit,
+    IconUserCircle,
+    IconStar,
 } from '@tabler/icons-react';
-import { authService, UserProfileDTO, Booking, bookingService } from '@/services';
+import { authService, UserProfileDTO } from '@/services';
 
+const ProfilePage = () => {
+    const [profile, setProfile] = useState<UserProfileDTO | null>(null);
+    const [loading, setLoading] = useState(true);
 
-interface Party {
-    id: string;
-    title: string;
-    location: string;
-    time: string;
-    participants: {
-        current: number;
-        max: number;
-    };
-    status: 'upcoming' | 'completed' | 'cancelled';
-}
-
-// Helper Components
-const StatCard = ({ label, value }: { label: string; value: string | number }) => (
-    <Grid.Col span={6}>
-        <Paper p="md" radius="md" ta="center" withBorder>
-            <Text fw={700} size="xl">{value}</Text>
-            <Text size="sm" c="dimmed">{label}</Text>
-        </Paper>
-    </Grid.Col>
-);
-
-const PartyCard = ({ party }: { party: Party }) => (
-    <Paper key={party.id} p="md" radius="md" withBorder>
-        <Group justify="space-between" mb="xs">
-            <div>
-                <Text fw={500}>{party.title}</Text>
-                <Group gap="xs">
-                    <IconMapPin size={14} />
-                    <Text size="sm" c="dimmed">{party.location}</Text>
-                </Group>
-            </div>
-            <Badge color="blue">
-                {party.participants.current}/{party.participants.max} joined
-            </Badge>
-        </Group>
-        <Group mt="md" justify="space-between">
-            <Text size="sm">{party.time}</Text>
-            <Group>
-                <ActionIcon variant="light" color="gray">
-                    <IconHeart size={16} />
-                </ActionIcon>
-                <Button variant="light" size="xs">
-                    View Details
-                </Button>
-            </Group>
-        </Group>
-    </Paper>
-);
-const BookingCard = ({ booking }: { booking: Booking }) => (
-    <Paper p="md" radius="md" withBorder>
-        <Group justify="space-between" mb="xs">
-            <div>
-                <Text fw={500}>{booking.court_name}</Text>
-                <Group gap="xs">
-                    <IconMapPin size={14} />
-                    <Text size="sm" c="dimmed">{booking.venue_name} - {booking.venue_location}</Text>
-                </Group>
-            </div>
-            <Badge
-                color={
-                    booking.status === 'pending' ? 'yellow' :
-                        booking.status === 'confirmed' ? 'green' :
-                            booking.status === 'cancelled' ? 'red' :
-                                'gray'
-                }
-            >
-                {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-            </Badge>
-        </Group>
-
-        <Group justify="space-between" mt="md">
-            <Stack gap="xs">
-                <Group gap="xs">
-                    <IconCalendarEvent size={14} />
-                    <Text size="sm">{new Date(booking.date).toLocaleDateString()}</Text>
-                </Group>
-                <Text size="sm">
-                    {booking.start_time} - {booking.end_time}
-                </Text>
-            </Stack>
-            <Stack gap="xs" align="flex-end">
-                <Text fw={500} size="lg">฿{booking.total_amount.toFixed(2)}</Text>
-                <Text size="xs" c="dimmed">
-                    Booked on {new Date(booking.created_at).toLocaleDateString()}
-                </Text>
-            </Stack>
-        </Group>
-    </Paper>
-);
-const ProfileHeader = ({ userData, profile }: { userData: any; profile: UserProfileDTO }) => (
-    <Stack align="center">
-        <Box pos="relative">
-            <Avatar
-                src={userData.avatar}
-                size={120}
-                radius={120}
-                mx="auto"
-                style={{ border: '4px solid', borderColor: 'var(--mantine-color-blue-1)' }}
-            />
-            <ActionIcon
-                variant="filled"
-                color="blue"
-                size="md"
-                pos="absolute"
-                bottom={0}
-                right={0}
-                radius="xl"
-            >
-                <IconEdit size={16} />
-            </ActionIcon>
-        </Box>
-
-        <Title order={2}>{userData.name}</Title>
-
-        <Group gap="xs">
-            {userData.badges.map((badge: any, index: number) => (
-                <Badge
-                    key={index}
-                    color={badge.color}
-                    leftSection={badge.icon}
-                >
-                    {badge.label}
-                </Badge>
-            ))}
-        </Group>
-
-        <Badge size="lg" color="blue">
-            {userData.level.charAt(0).toUpperCase() + userData.level.slice(1)}
-        </Badge>
-
-        <ContactInfo profile={profile} />
-        <BioSection profile={profile} />
-        <Text size="sm" c="dimmed">{userData.joinDate}</Text>
-    </Stack>
-);
-
-const ContactInfo = ({ profile }: { profile: UserProfileDTO }) => (
-    <>
-        <Group gap="xs">
-            <IconMail size={16} />
-            <Text size="sm">{profile.email}</Text>
-        </Group>
-        <Group gap="xs">
-            <IconPhone size={16} />
-            <Text size="sm">{profile.phone}</Text>
-        </Group>
-        <Group gap="xs">
-            <IconMapPin size={16} />
-            <Text size="sm">{profile.location}</Text>
-        </Group>
-    </>
-);
-
-const BioSection = ({ profile }: { profile: UserProfileDTO }) => (
-    profile.bio ? (
-        <Paper p="sm" radius="md" withBorder w="100%">
-            <Text size="sm" c="dimmed">
-                {profile.bio}
-            </Text>
-        </Paper>
-    ) : null
-);
-
-const ProfileStats = ({ userData }: { userData: any }) => (
-    <Grid mt="xl">
-        <StatCard label="Hosted" value={userData.stats.hosted} />
-        <StatCard label="Joined" value={userData.stats.joined} />
-        <StatCard label="Reviews" value={userData.stats.reviews} />
-        <StatCard label="Partners" value={userData.stats.regularPartners} />
-    </Grid>
-);
-
-const ActionButtons = () => (
-    <Group mt="xl" grow>
-        <Button
-            variant="light"
-            leftSection={<IconMessageCircle size={16} />}
-        >
-            Message
-        </Button>
-        <Button
-            variant="light"
-            leftSection={<IconShare size={16} />}
-        >
-            Share
-        </Button>
-    </Group>
-);
-const PartyTabs = ({ activeTab, setActiveTab, mockParties, bookings = [] }: {
-    activeTab: string;
-    setActiveTab: (value: string | null) => void;
-    mockParties: Party[];
-    bookings?: Booking[];
-}) => (
-    <Tabs value={activeTab} onChange={setActiveTab}>
-        <Tabs.List>
-            <Tabs.Tab
-                value="hosted"
-                leftSection={<IconTrophy size={16} />}
-            >
-                Hosted Parties
-            </Tabs.Tab>
-            <Tabs.Tab
-                value="joined"
-                leftSection={<IconCalendarEvent size={16} />}
-            >
-                Joined Parties
-            </Tabs.Tab>
-            <Tabs.Tab
-                value="bookings"
-                leftSection={<IconCalendarEvent size={16} />}
-            >
-                My Bookings
-            </Tabs.Tab>
-        </Tabs.List>
-
-        <Tabs.Panel value="hosted" p="md">
-            <Stack>
-                {mockParties.map((party) => (
-                    <PartyCard key={party.id} party={party} />
-                ))}
-            </Stack>
-        </Tabs.Panel>
-
-        <Tabs.Panel value="joined" p="md">
-            <Stack>
-                {mockParties.map((party) => (
-                    <PartyCard key={party.id} party={party} />
-                ))}
-            </Stack>
-        </Tabs.Panel>
-
-        <Tabs.Panel value="bookings" p="md">
-            <Stack>
-                {bookings.map((booking) => (
-                    <BookingCard key={booking.id} booking={booking} />
-                ))}
-            </Stack>
-        </Tabs.Panel>
-    </Tabs>
-);
-
-const ProfilePage = ({ profile }: { profile: UserProfileDTO }) => {
-    const [activeTab, setActiveTab] = useState<string>('hosted');
-    const [bookings, setBookings] = useState<Booking[]>([]);
-
-    const fetchBookings = async () => {
+    const fetchProfile = async () => {
         try {
-            const response = await bookingService.getMyBooking()
+            setLoading(true);
+            const response = await authService.getProfile();
             if (response) {
-                setBookings(response.data)
-            }
-            else {
-                console.log('No bookings found')
-                setBookings([])
+                setProfile(response);
             }
         } catch (error) {
-            console.error('Fetch bookings error:', error);
+            console.error('Error fetching profile:', error);
+        } finally {
+            setLoading(false);
         }
-    }
-
-    useEffect(() => {
-        fetchBookings();
-    }, []);
-
-
-    const userData = {
-        name: `${profile.first_name} ${profile.last_name}`,
-        avatar: profile.avatar_url || '/api/placeholder/128/128',
-        level: profile.play_level,
-        location: profile.location,
-        joinDate: `Last active: ${new Date(profile.last_active_at).toLocaleDateString()}`,
-        stats: {
-            hosted: profile.hosted_sessions,
-            joined: profile.joined_sessions,
-            rating: profile.average_rating,
-            reviews: profile.total_reviews,
-            regularPartners: profile.regular_partners,
-        },
-        badges: [
-            {
-                label: `${profile.play_hand}-handed`,
-                color: 'blue',
-                icon: <IconWand size={12} />
-            },
-            {
-                label: profile.gender,
-                color: 'grape',
-                icon: <IconBlender size={12} />
-            },
-            ...(profile.role === 'admin' ? [{
-                label: 'Admin',
-                color: 'red',
-                icon: <IconStar size={12} />
-            }] : []),
-            ...(profile.average_rating >= 4.5 ? [{
-                label: 'Top Rated',
-                color: 'yellow',
-                icon: <IconTrophy size={12} />
-            }] : []),
-        ],
     };
 
-    const mockParties: Party[] = [
-        {
-            id: '1',
-            title: 'Casual Badminton Session',
-            location: 'Sports Complex A',
-            time: 'Sep 18, 2024 16:00 - 18:00',
-            participants: { current: 8, max: 10 },
-            status: 'upcoming',
-        },
-        {
-            id: '2',
-            title: 'Weekend Practice',
-            location: 'Central Stadium',
-            time: 'Sep 20, 2024 14:00 - 16:00',
-            participants: { current: 6, max: 8 },
-            status: 'upcoming',
-        },
-    ];
+    useEffect(() => {
+        fetchProfile();
+    }, []);
+
+    // Header Section with blue background
+    const HeaderSection = () => (
+        <Box bg="blue.6" c="white" py={48}>
+            <Container size="xl">
+                <Grid gutter="xl">
+                    <Grid.Col span={{ base: 12, md: 6 }}>
+                        <Stack gap="lg">
+                            <div>
+                                <Text size="xl" fw={500}>Profile</Text>
+                                <Title order={1}>My Profile</Title>
+                            </div>
+                            <Text size="lg">
+                                Manage your personal information and preferences.
+                            </Text>
+                        </Stack>
+                    </Grid.Col>
+                </Grid>
+            </Container>
+        </Box>
+    );
+
+    const StatCard = ({ icon: Icon, label, value }: { icon: any, label: string, value: string | number }) => (
+        <Paper withBorder p="md" radius="md">
+            <Group>
+                <ThemeIcon
+                    size="lg"
+                    radius="md"
+                    variant="light"
+                >
+                    <Icon size={20} />
+                </ThemeIcon>
+                <div>
+                    <Text size="xs" tt="uppercase" c="dimmed" fw={700}>
+                        {label}
+                    </Text>
+                    <Text fw={700} size="xl">
+                        {value}
+                    </Text>
+                </div>
+            </Group>
+        </Paper>
+    );
+
+    if (!profile) {
+        return null;
+    }
 
     return (
-        // ปรับ container style
-        <Box bg="gray.0" mih="100vh">
-            <Container size="xl" py="xl" h="100%">
-                <Grid gutter="lg" style={{ minHeight: '100%' }}>
-                    {/* Profile Sidebar */}
+        <Box bg="gray.0">
+            <HeaderSection />
+
+            <Container size="xl" py="xl">
+                <Grid gutter="lg">
+                    {/* Basic Info Card */}
                     <Grid.Col span={{ base: 12, md: 4 }}>
-                        <Card shadow="sm" radius="md" withBorder h="100%">
-                            <Stack h="100%" justify="space-between">
-                                <div>
-                                    <ProfileHeader userData={userData} profile={profile} />
-                                    <ProfileStats userData={userData} />
-                                </div>
-                                <ActionButtons />
+                        <Card withBorder radius="md">
+                            <Stack align="center" mb="md">
+                                <Box pos="relative">
+                                    <Avatar
+                                        src={profile.avatar_url || '/api/placeholder/128/128'}
+                                        size={120}
+                                        radius={120}
+                                        mx="auto"
+                                        styles={{
+                                            root: { border: '4px solid white' }
+                                        }}
+                                    />
+                                    <Button
+                                        variant="filled"
+                                        size="xs"
+                                        radius="xl"
+                                        pos="absolute"
+                                        bottom={0}
+                                        right={0}
+                                        leftSection={<IconEdit size={14} />}
+                                    >
+                                        Edit
+                                    </Button>
+                                </Box>
+
+                                <Stack align="center" gap="xs">
+                                    <Title order={2}>{profile.first_name} {profile.last_name}</Title>
+                                    <Badge size="lg" radius="sm">
+                                        {profile.play_level}
+                                    </Badge>
+                                </Stack>
+                            </Stack>
+
+                            <Stack gap="md">
+                                <Group gap="xs">
+                                    <IconMail size={16} />
+                                    <Text size="sm">{profile.email}</Text>
+                                </Group>
+                                <Group gap="xs">
+                                    <IconPhone size={16} />
+                                    <Text size="sm">{profile.phone}</Text>
+                                </Group>
+                                <Group gap="xs">
+                                    <IconMapPin size={16} />
+                                    <Text size="sm">{profile.location}</Text>
+                                </Group>
+
+                                {profile.bio && (
+                                    <Paper withBorder p="md" radius="md">
+                                        <Text size="sm" c="dimmed">
+                                            {profile.bio}
+                                        </Text>
+                                    </Paper>
+                                )}
                             </Stack>
                         </Card>
                     </Grid.Col>
 
-                    {/* Main Content */}
+                    {/* Stats and Details */}
                     <Grid.Col span={{ base: 12, md: 8 }}>
-                        <Card shadow="sm" radius="md" withBorder h="100%">
-                            <Stack h="100%">
-                                <PartyTabs
-                                    activeTab={activeTab}
-                                    setActiveTab={(value) => setActiveTab(value as string)}
-                                    mockParties={mockParties}
-                                    bookings={bookings}
-                                />
-                            </Stack>
-                        </Card>
+                        <Stack>
+                            {/* Stats Grid */}
+                            <Grid gutter="md">
+                                <Grid.Col span={{ base: 12, sm: 6 }}>
+                                    <StatCard
+                                        icon={IconCalendarEvent}
+                                        label="Hosted Sessions"
+                                        value={profile.hosted_sessions}
+                                    />
+                                </Grid.Col>
+                                <Grid.Col span={{ base: 12, sm: 6 }}>
+                                    <StatCard
+                                        icon={IconUsers}
+                                        label="Joined Sessions"
+                                        value={profile.joined_sessions}
+                                    />
+                                </Grid.Col>
+                                <Grid.Col span={{ base: 12, sm: 6 }}>
+                                    <StatCard
+                                        icon={IconStar}
+                                        label="Average Rating"
+                                        value={profile.average_rating.toFixed(1)}
+                                    />
+                                </Grid.Col>
+                                <Grid.Col span={{ base: 12, sm: 6 }}>
+                                    <StatCard
+                                        icon={IconTrophy}
+                                        label="Regular Partners"
+                                        value={profile.regular_partners}
+                                    />
+                                </Grid.Col>
+                            </Grid>
+
+                            {/* Player Details */}
+                            <Card withBorder radius="md">
+                                <Title order={3} mb="md">Player Details</Title>
+                                <Grid>
+                                    <Grid.Col span={6}>
+                                        <Stack gap="md">
+                                            <Paper withBorder p="md" radius="md">
+                                                <Text size="sm" fw={500} c="dimmed">Playing Hand</Text>
+                                                <Text size="lg">{profile.play_hand}</Text>
+                                            </Paper>
+                                            <Paper withBorder p="md" radius="md">
+                                                <Text size="sm" fw={500} c="dimmed">Gender</Text>
+                                                <Text size="lg">{profile.gender}</Text>
+                                            </Paper>
+                                        </Stack>
+                                    </Grid.Col>
+                                    <Grid.Col span={6}>
+                                        <Stack gap="md">
+                                            <Paper withBorder p="md" radius="md">
+                                                <Text size="sm" fw={500} c="dimmed">Total Reviews</Text>
+                                                <Text size="lg">{profile.total_reviews}</Text>
+                                            </Paper>
+                                            <Paper withBorder p="md" radius="md">
+                                                <Text size="sm" fw={500} c="dimmed">Member Since</Text>
+                                                <Text size="lg">
+                                                    -
+
+                                                </Text>
+                                            </Paper>
+                                        </Stack>
+                                    </Grid.Col>
+                                </Grid>
+                            </Card>
+
+                            {/* Action Buttons */}
+                            <Group grow>
+                                <Button
+                                    variant="light"
+                                    leftSection={<IconEdit size={16} />}
+                                >
+                                    Edit Profile
+                                </Button>
+                                <Button
+                                    variant="light"
+                                    leftSection={<IconUserCircle size={16} />}
+                                >
+                                    View Public Profile
+                                </Button>
+                            </Group>
+                        </Stack>
                     </Grid.Col>
                 </Grid>
             </Container>
@@ -396,28 +256,4 @@ const ProfilePage = ({ profile }: { profile: UserProfileDTO }) => {
     );
 };
 
-const MyProfilePage = () => {
-    const [profileData, setProfileData] = useState<UserProfileDTO | null>(null);
-
-
-    const fetchProfileData = async () => {
-        const response = await authService.getProfile()
-        console.log(response);
-        if (response) {
-            setProfileData(response)
-        }
-    }
-
-    useEffect(() => {
-        fetchProfileData();
-    }
-        , []);
-
-    if (!profileData) {
-        return null;
-    }
-
-    return <ProfilePage profile={profileData} />;
-};
-
-export default MyProfilePage;
+export default ProfilePage;

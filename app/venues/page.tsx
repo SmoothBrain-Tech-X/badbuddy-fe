@@ -298,19 +298,6 @@ const VenueCard: React.FC<{ venue: Venue }> = ({ venue }) => {
                     <Text size="sm" c="dimmed">({venue.totalReviews} reviews)</Text>
                 </Group>
 
-                <Group gap="xs">
-                    {venue.facilities.map((facility, index) => (
-                        <ThemeIcon
-                            key={`facility-${facility}-${index}`}
-                            size="sm"
-                            variant="light"
-                            radius="xl"
-                            title={facility}
-                        >
-                            <FacilityIcon facility={facility} />
-                        </ThemeIcon>
-                    ))}
-                </Group>
 
                 <Group justify="end" mt="xs">
                     <Button variant="light" onClick={() => router.push(`/venues/${venue.id}`)}>

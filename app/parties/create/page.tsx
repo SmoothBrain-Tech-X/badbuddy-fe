@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { z } from 'zod';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import toast from 'react-hot-toast';
+import { notifications } from '@mantine/notifications'; // Add this import
 import {
     Container,
     Title,
@@ -41,6 +41,7 @@ import {
     IconTrash,
     IconCalendar,
     IconClock,
+    IconX
 } from '@tabler/icons-react';
 import { DatePickerInput, TimeInput } from '@mantine/dates';
 import { useRouter } from 'next/navigation';
@@ -147,45 +148,63 @@ const CreateParty = () => {
     };
 
     const onSubmit = async (data: PartyFormData) => {
-        const submitPromise = new Promise(async (resolve, reject) => {
-            try {
-                setLoading(true);
-                const formattedDate = formatDateToISOString(data.date);
+        try {
+            setLoading(true);
+            const formattedDate = formatDateToISOString(data.date);
 
-                const partyData: CreateSessionDTO = {
-                    venue_id: data.venue,
-                    title: data.name,
-                    description: data.description,
-                    session_date: formattedDate,
-                    start_time: data.startTime,
-                    end_time: data.endTime,
-                    player_level: data.skillLevel,
-                    max_participants: data.maxParticipants,
-                    cost_per_person: data.costPerPerson,
-                    allow_cancellation: data.allowCancellation,
-                    cancellation_deadline_hours: 2,
-                    rules: data.rules,
-                    is_public: data.isPublic,
-                };
+            const partyData: CreateSessionDTO = {
+                venue_id: data.venue,
+                title: data.name,
+                description: data.description,
+                session_date: formattedDate,
+                start_time: data.startTime,
+                end_time: data.endTime,
+                player_level: data.skillLevel,
+                max_participants: data.maxParticipants,
+                cost_per_person: data.costPerPerson,
+                allow_cancellation: data.allowCancellation,
+                cancellation_deadline_hours: 2,
+                rules: data.rules,
+                is_public: data.isPublic,
+            };
 
-                await sessionService.create(partyData);
-                resolve('Party created successfully!');
-                router.push('/parties');
-            } catch (error) {
-                console.error('Error submitting form:', error);
-                reject(new Error('Failed to create party. Please try again.'));
-            } finally {
-                setLoading(false);
-            }
-        });
+            // Show loading notification
+            const loadingNotificationId = notifications.show({
+                loading: true,
+                title: 'Creating Party',
+                message: 'Please wait while we create your party...',
+                autoClose: false,
+                withCloseButton: false,
+            });
 
-        toast.promise(submitPromise, {
-            loading: 'Creating your party...',
-            success: (message) => message as string,
-            error: (err) => err.message
-        });
+            await sessionService.create(partyData);
+
+            // Update notification on success
+            notifications.update({
+                id: loadingNotificationId,
+                loading: false,
+                title: 'Success',
+                message: 'Party created successfully!',
+                color: 'green',
+                icon: <IconCheck size={16} />,
+                autoClose: 2000,
+            });
+
+            router.push('/parties');
+        } catch (error) {
+            // Show error notification
+            notifications.show({
+                title: 'Error',
+                message: 'Failed to create party. Please try again.',
+                color: 'red',
+                icon: <IconX size={16} />,
+                autoClose: 5000,
+            });
+            console.error('Error submitting form:', error);
+        } finally {
+            setLoading(false);
+        }
     };
-
 
 
 

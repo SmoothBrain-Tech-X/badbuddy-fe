@@ -19,6 +19,10 @@ export class BookingService {
     return this.api.post<CreateBookingResponseDTO>(`/bookings`, bookingData);
   }
 
+  async cancelBooking(booking_id: string): Promise<BookingResponse> {
+    return this.api.post<BookingResponse>(`/bookings/${booking_id}/cancel`);
+  }
+
   async checkAvailability(bookingData: CourtBookingRequestDTO): Promise<BookingConflictDTO> {
     return this.api.get<BookingConflictDTO>(`/bookings/availability`, { params: bookingData });
   }
