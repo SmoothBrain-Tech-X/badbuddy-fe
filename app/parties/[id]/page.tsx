@@ -11,6 +11,7 @@ import {
   IconMessageCircle,
   IconUsers,
 } from '@tabler/icons-react';
+import { AxiosError } from 'axios';
 import {
   Anchor,
   Badge,
@@ -30,9 +31,13 @@ import {
 import { modals } from '@mantine/modals';
 import { notifications } from '@mantine/notifications';
 import { ConfirmModalData } from '@/configs/ModalData/ModalData';
-import { SuccessNotificationData } from '@/configs/NotificationData/NotificationData';
+import {
+  ErrorNotificationData,
+  SuccessNotificationData,
+} from '@/configs/NotificationData/NotificationData';
 import useGetSession from '@/hooks/react-query/session/useGetSession';
 import useJoinSession from '@/hooks/react-query/session/useJoinSession';
+import useLeaveSession from '@/hooks/react-query/session/useLeaveSession';
 import { useAuth } from '@/hooks/useAuth';
 import { sessionService } from '@/services';
 import FeeCard from './components/FeeCard';
@@ -59,7 +64,6 @@ interface Message {
   likes: number;
 }
 
-// Main Component
 const PartyView: React.FC = () => {
   const params = useParams();
   const auth = useAuth();
@@ -67,9 +71,18 @@ const PartyView: React.FC = () => {
 
   const getSession = useGetSession({ session_id: sessionId });
   const joinSession = useJoinSession();
+  const leaveSession = useLeaveSession();
 
   const isJoin = () => {
     return getSession.data?.data.participants.find((item) => item.user_id === auth.user?.id)
+      ? true
+      : false;
+  };
+
+  const checkDisabled = () => {
+    return getSession.data?.data.participants.find(
+      (item) => item.user_id === auth.user?.id && item.status === 'cancelled'
+    )
       ? true
       : false;
   };
@@ -85,6 +98,40 @@ const PartyView: React.FC = () => {
             onSuccess: () => {
               notifications.show(SuccessNotificationData);
               getSession.refetch();
+            },
+            onError: (error) => {
+              if (error instanceof AxiosError) {
+                notifications.show({
+                  ...ErrorNotificationData,
+                  message: error.message,
+                });
+              }
+            },
+          }
+        );
+      },
+    });
+  };
+
+  const onLeave = () => {
+    modals.openConfirmModal({
+      ...ConfirmModalData,
+      children: 'Are you sure you want to leave this session?',
+      onConfirm: () => {
+        leaveSession.mutate(
+          { session_id: sessionId },
+          {
+            onSuccess: () => {
+              notifications.show(SuccessNotificationData);
+              getSession.refetch();
+            },
+            onError: (error) => {
+              if (error instanceof AxiosError) {
+                notifications.show({
+                  ...ErrorNotificationData,
+                  message: error.message,
+                });
+              }
             },
           }
         );
@@ -214,7 +261,13 @@ const PartyView: React.FC = () => {
                 />
 
                 <FeeCard price={`฿${getSession.data?.data.cost_per_person}/person`} />
-                {isJoin() ? <Button>Leave</Button> : <Button onClick={onJoin}>Join</Button>}
+                {isJoin() ? (
+                  <Button disabled={checkDisabled()} onClick={onLeave}>
+                    Leave
+                  </Button>
+                ) : (
+                  <Button onClick={onJoin}>Join</Button>
+                )}
               </Stack>
             </Card>
           </Grid.Col>
