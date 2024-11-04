@@ -110,3 +110,10 @@ export interface UserProfileDTO {
   regular_partners: number;
   venues: VenueId[];
 }
+
+export interface CheckAvailabilityDTO {
+  court_id: string;
+  date: string;
+  start_time: string;
+  end_time: string;
+}

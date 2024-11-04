@@ -33,7 +33,7 @@ import {
     IconMail,
     IconPhone,
 } from '@tabler/icons-react';
-import { authService, UserProfileDTO } from '@/services';
+import { authService, UserProfileDTO, Booking, bookingService } from '@/services';
 
 
 interface Party {
@@ -85,7 +85,47 @@ const PartyCard = ({ party }: { party: Party }) => (
         </Group>
     </Paper>
 );
+const BookingCard = ({ booking }: { booking: Booking }) => (
+    <Paper p="md" radius="md" withBorder>
+        <Group justify="space-between" mb="xs">
+            <div>
+                <Text fw={500}>{booking.court_name}</Text>
+                <Group gap="xs">
+                    <IconMapPin size={14} />
+                    <Text size="sm" c="dimmed">{booking.venue_name} - {booking.venue_location}</Text>
+                </Group>
+            </div>
+            <Badge
+                color={
+                    booking.status === 'pending' ? 'yellow' :
+                        booking.status === 'confirmed' ? 'green' :
+                            booking.status === 'cancelled' ? 'red' :
+                                'gray'
+                }
+            >
+                {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+            </Badge>
+        </Group>
 
+        <Group justify="space-between" mt="md">
+            <Stack gap="xs">
+                <Group gap="xs">
+                    <IconCalendarEvent size={14} />
+                    <Text size="sm">{new Date(booking.date).toLocaleDateString()}</Text>
+                </Group>
+                <Text size="sm">
+                    {booking.start_time} - {booking.end_time}
+                </Text>
+            </Stack>
+            <Stack gap="xs" align="flex-end">
+                <Text fw={500} size="lg">฿{booking.total_amount.toFixed(2)}</Text>
+                <Text size="xs" c="dimmed">
+                    Booked on {new Date(booking.created_at).toLocaleDateString()}
+                </Text>
+            </Stack>
+        </Group>
+    </Paper>
+);
 const ProfileHeader = ({ userData, profile }: { userData: any; profile: UserProfileDTO }) => (
     <Stack align="center">
         <Box pos="relative">
@@ -185,11 +225,11 @@ const ActionButtons = () => (
         </Button>
     </Group>
 );
-
-const PartyTabs = ({ activeTab, setActiveTab, mockParties }: {
+const PartyTabs = ({ activeTab, setActiveTab, mockParties, bookings = [] }: {
     activeTab: string;
     setActiveTab: (value: string | null) => void;
     mockParties: Party[];
+    bookings?: Booking[];
 }) => (
     <Tabs value={activeTab} onChange={setActiveTab}>
         <Tabs.List>
@@ -204,6 +244,12 @@ const PartyTabs = ({ activeTab, setActiveTab, mockParties }: {
                 leftSection={<IconCalendarEvent size={16} />}
             >
                 Joined Parties
+            </Tabs.Tab>
+            <Tabs.Tab
+                value="bookings"
+                leftSection={<IconCalendarEvent size={16} />}
+            >
+                My Bookings
             </Tabs.Tab>
         </Tabs.List>
 
@@ -222,11 +268,40 @@ const PartyTabs = ({ activeTab, setActiveTab, mockParties }: {
                 ))}
             </Stack>
         </Tabs.Panel>
+
+        <Tabs.Panel value="bookings" p="md">
+            <Stack>
+                {bookings.map((booking) => (
+                    <BookingCard key={booking.id} booking={booking} />
+                ))}
+            </Stack>
+        </Tabs.Panel>
     </Tabs>
 );
 
 const ProfilePage = ({ profile }: { profile: UserProfileDTO }) => {
     const [activeTab, setActiveTab] = useState<string>('hosted');
+    const [bookings, setBookings] = useState<Booking[]>([]);
+
+    const fetchBookings = async () => {
+        try {
+            const response = await bookingService.getMyBooking()
+            if (response) {
+                setBookings(response.data)
+            }
+            else {
+                console.log('No bookings found')
+                setBookings([])
+            }
+        } catch (error) {
+            console.error('Fetch bookings error:', error);
+        }
+    }
+
+    useEffect(() => {
+        fetchBookings();
+    }, []);
+
 
     const userData = {
         name: `${profile.first_name} ${profile.last_name}`,
@@ -285,30 +360,34 @@ const ProfilePage = ({ profile }: { profile: UserProfileDTO }) => {
     ];
 
     return (
+        // ปรับ container style
         <Box bg="gray.0" mih="100vh">
-            <Container size="xl" py="xl">
-                <Grid gutter="lg">
+            <Container size="xl" py="xl" h="100%">
+                <Grid gutter="lg" style={{ minHeight: '100%' }}>
                     {/* Profile Sidebar */}
                     <Grid.Col span={{ base: 12, md: 4 }}>
-                        <Stack>
-                            <Card shadow="sm" radius="md" withBorder>
-                                <ProfileHeader userData={userData} profile={profile} />
-                                <ProfileStats userData={userData} />
+                        <Card shadow="sm" radius="md" withBorder h="100%">
+                            <Stack h="100%" justify="space-between">
+                                <div>
+                                    <ProfileHeader userData={userData} profile={profile} />
+                                    <ProfileStats userData={userData} />
+                                </div>
                                 <ActionButtons />
-                            </Card>
-                        </Stack>
+                            </Stack>
+                        </Card>
                     </Grid.Col>
 
                     {/* Main Content */}
                     <Grid.Col span={{ base: 12, md: 8 }}>
-                        <Card shadow="sm" radius="md" withBorder>
-                            <PartyTabs
-                                activeTab={activeTab}
-                                setActiveTab={(value) => setActiveTab(value as string
-
-                                )}
-                                mockParties={mockParties}
-                            />
+                        <Card shadow="sm" radius="md" withBorder h="100%">
+                            <Stack h="100%">
+                                <PartyTabs
+                                    activeTab={activeTab}
+                                    setActiveTab={(value) => setActiveTab(value as string)}
+                                    mockParties={mockParties}
+                                    bookings={bookings}
+                                />
+                            </Stack>
                         </Card>
                     </Grid.Col>
                 </Grid>

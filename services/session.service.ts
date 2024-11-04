@@ -1,5 +1,11 @@
 import { Api } from './api';
-import { CreateSessionDTO, Session, SessionFilters, SessionResponse } from './types/session';
+import {
+  CreateSessionDTO,
+  Session,
+  SessionFilters,
+  SessionResponse,
+  sessionResponseDTO,
+} from './types/session';
 
 export class SessionService {
   constructor(private api: Api) {}
@@ -8,8 +14,8 @@ export class SessionService {
     return this.api.post<Session>('/sessions', data);
   }
 
-  async getById(id: string): Promise<Session | null> {
-    return this.api.get<Session>(`/sessions/${id}`);
+  async getById(id: string): Promise<sessionResponseDTO | null> {
+    return this.api.get<sessionResponseDTO>(`/sessions/${id}`);
   }
 
   async search(params?: SessionFilters): Promise<SessionResponse | null> {
@@ -34,25 +40,3 @@ export class SessionService {
     });
   }
 }
-
-// Example usage in a component:
-/*
-const handleJoinSession = async (sessionId: string) => {
-  const response = await sessionService.join(sessionId);
-  if (response) {
-    toast.success('Successfully joined session');
-    // Handle success case
-  }
-  // Error is already handled by API class
-};
-
-const loadSessions = async () => {
-  setLoading(true);
-  const response = await sessionService.list();
-  if (response) {
-    setSessions(response.data);
-    setTotalCount(response.total);
-  }
-  setLoading(false);
-};
-*/

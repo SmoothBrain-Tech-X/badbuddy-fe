@@ -37,6 +37,16 @@ interface QuickInfoCardProps {
     onGetDirections?: () => void;
 }
 
+const formatTime = (timeString: string) => {
+    try {
+        const match = timeString.match(/T(\d{2}:\d{2})/);
+        return match ? match[1] : 'Invalid time';
+    } catch (error) {
+        console.error('Error formatting time:', error);
+        return 'Invalid time';
+    }
+};
+
 const getCurrentDayOpenHours = (openRange: OpenRange[]) => {
     const today = new Date().toLocaleString('en-us', { weekday: 'long' });
     const todaySchedule = openRange.find(schedule => schedule.day === today);
@@ -45,16 +55,8 @@ const getCurrentDayOpenHours = (openRange: OpenRange[]) => {
         return 'Closed Today';
     }
 
-    const openTime = new Date(todaySchedule.open_time).toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: 'numeric',
-        hour12: true
-    });
-    const closeTime = new Date(todaySchedule.close_time).toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: 'numeric',
-        hour12: true
-    });
+    const openTime = formatTime(todaySchedule.open_time);
+    const closeTime = formatTime(todaySchedule.close_time);
 
     return `Open Today: ${openTime} - ${closeTime}`;
 };

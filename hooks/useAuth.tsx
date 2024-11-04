@@ -1,4 +1,3 @@
-// src/hooks/useAuth.ts
 import { useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
@@ -18,6 +17,7 @@ export function useAuth() {
         isLoading,
         error,
         isAuthenticated,
+        tokenExpiresAt,
         login: storeLogin,
         logout: storeLogout,
         checkAuth,
@@ -48,22 +48,37 @@ export function useAuth() {
             toast.dismiss(loadingToast);
         });
 
-        // Set up token expiration check
+        // Calculate time until token expires
+        const setupTokenCheck = () => {
+            if (tokenExpiresAt) {
+                const timeUntilExpiry = tokenExpiresAt - Date.now() - (5 * 60 * 1000); // 5 minutes before expiry
+                if (timeUntilExpiry > 0) {
+                    return setTimeout(() => {
+                        toast.error('Your session is about to expire. Please login again.');
+                        storeLogout();
+                    }, timeUntilExpiry);
+                }
+            }
+        };
+
+        const tokenCheckTimeout = setupTokenCheck();
+
+        // Periodic light check
         const checkInterval = setInterval(() => {
             checkAuth();
-        }, 60000); // Check every minute
+        }, 5 * 60 * 1000); // Check every 5 minutes
 
-        return () => clearInterval(checkInterval);
-    }, [checkAuth]);
+        return () => {
+            clearInterval(checkInterval);
+            if (tokenCheckTimeout) clearTimeout(tokenCheckTimeout);
+        };
+    }, [checkAuth, tokenExpiresAt, storeLogout]);
 
     const login = async (data: LoginDTO): Promise<void> => {
         const loadingToast = toast.loading('Signing in...');
         try {
             await storeLogin(data);
-
-            const redirectUrl = searchParams.get('redirect');
-
-            // Always redirect to /home after successful login
+            toast.success('Successfully signed in!');
             router.push('/home');
         } catch (error) {
             handleAuthError(error as AuthError, 'Login');
@@ -76,8 +91,7 @@ export function useAuth() {
         const loadingToast = toast.loading('Signing out...');
         try {
             await storeLogout();
-
-
+            toast.success('Successfully signed out');
             router.push('/login');
         } catch (error) {
             handleAuthError(error as AuthError, 'Logout');

@@ -23,7 +23,7 @@ export const GoogleMapsEmbed: React.FC<GoogleMapsEmbedProps> = ({
     longitude = 99.3986862,
     title = "Location Map",
     width = "100%",
-    height = 450,
+    height = 400,
     zoom = 15,
     className,
     style

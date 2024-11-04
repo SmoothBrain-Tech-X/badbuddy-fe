@@ -8,7 +8,6 @@ type Props = {
 const MainProvider = (props: Props) => (
     <div>
         <div style={{
-            height: '84px',
         }}>
             <Navbar />
         </div>

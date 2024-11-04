@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
     Container,
     Grid,
@@ -39,6 +39,13 @@ import {
     IconChevronRight,
     IconProps,
 } from '@tabler/icons-react';
+import { SessionData, Participant, sessionService } from '@/services';
+import ParticipantCard from './components/ParticipantCard';
+import SafetyGuidelines from './components/SafetyGuidelines';
+import ParticipantsProgress from './components/ParticipantsProgress';
+import MessageCard from './components/MessageCard';
+import PartyHeader from './components/PartyHeader';
+import InfoItem from './components/InfoItem';
 
 // Types
 interface Host {
@@ -47,14 +54,7 @@ interface Host {
     hostedParties: number;
 }
 
-interface Participant {
-    id: string;
-    name: string;
-    avatar: string;
-    isHost: boolean;
-    level: string;
-    joinedParties: number;
-}
+
 
 interface Message {
     id: string;
@@ -84,233 +84,116 @@ interface PartyDetails {
     host: Host;
     likes: number;
     views: number;
+    status: string;
 }
 
-// Subcomponents
-const PartyHeader: React.FC<{
-    party: PartyDetails;
-    isLiked: boolean;
-    onLikeToggle: () => void;
-}> = ({ party, isLiked, onLikeToggle }) => (
-    <Box bg="blue.6" p="xl" color="white">
-        <Group justify="space-between" align="flex-start">
-            <div>
-                <Title order={2} mb="xs" c="white">{party.title}</Title>
-                <Group gap="xs">
-                    <Badge color="blue.1" c="white">{party.level}</Badge>
-                    <Badge color="blue.1" c="white">{party.price}</Badge>
-                </Group>
-            </div>
-            <Group gap="xs">
-                <ActionIcon
-                    variant="subtle"
-                    color="white"
-                    onClick={onLikeToggle}
-                >
-                    <IconHeart
-                        style={{ fill: isLiked ? 'white' : 'none' }}
-                        stroke={1.5}
-                    />
-                </ActionIcon>
-                <ActionIcon variant="subtle" color="white">
-                    <IconShare stroke={1.5} />
-                </ActionIcon>
-            </Group>
-        </Group>
-    </Box>
-);
 
-const InfoItem: React.FC<{
-    icon: React.ComponentType<IconProps>;
-    label: string;
-    value: string;
-}> = ({ icon: Icon, label, value }) => (
-    <Paper p="md" radius="md" withBorder>
-        <Group>
-            <ThemeIcon size="lg" radius="md" variant="light" color="blue">
-                <Icon size={rem(20)} />
-            </ThemeIcon>
-            <div>
-                <Text size="sm" c="dimmed">{label}</Text>
-                <Text fw={500}>{value}</Text>
-            </div>
-        </Group>
-    </Paper>
-);
 
-const MessageCard: React.FC<{ message: Message }> = ({ message }) => (
-    <Paper p="md" radius="md" withBorder>
-        <Group align="flex-start">
-            <Avatar src={message.user.avatar} radius="md" />
-            <div style={{ flex: 1 }}>
-                <Group justify="space-between" mb="xs">
-                    <Text fw={500}>{message.user.name}</Text>
-                    <Text size="sm" c="dimmed">{message.timestamp}</Text>
-                </Group>
-                <Text>{message.content}</Text>
-                <Group mt="xs">
-                    <Button
-                        variant="subtle"
-                        size="xs"
-                        leftSection={<IconHeart size={16} />}
-                    >
-                        {message.likes}
-                    </Button>
-                    <Button
-                        variant="subtle"
-                        size="xs"
-                        leftSection={<IconMessageCircle size={16} />}
-                    >
-                        Reply
-                    </Button>
-                </Group>
-            </div>
-        </Group>
-    </Paper>
-);
 
-const ParticipantCard: React.FC<{ participant: Participant }> = ({ participant }) => (
-    <Paper p="md" radius="md" withBorder>
-        <Group justify="space-between">
-            <Group>
-                <Avatar src={participant.avatar} size="lg" radius="md" />
-                <div>
-                    <Group gap="xs">
-                        <Text fw={500}>{participant.name}</Text>
-                        {participant.isHost && (
-                            <Badge
-                                leftSection={<IconCrown size={12} />}
-                                color="blue"
-                            >
-                                Host
-                            </Badge>
-                        )}
-                    </Group>
-                    <Text size="sm" c="dimmed">
-                        {participant.level} • {participant.joinedParties} parties joined
-                    </Text>
-                </div>
-            </Group>
-            <Button
-                variant="light"
-                leftSection={<IconMessageCircle size={16} />}
-            >
-                Chat
-            </Button>
-        </Group>
-    </Paper>
-);
 
-const ParticipantsProgress: React.FC<{
-    current: number;
-    max: number;
-}> = ({ current, max }) => (
-    <Paper p="md" radius="md" withBorder>
-        <Text fw={500} mb="xs">Participants Status</Text>
-        <Progress
-            value={(current / max) * 100}
-            mb="xs"
-            size="md"
-            radius="xl"
-            color={current / max >= 0.8 ? 'orange' : 'blue'}
-        />
-        <Group justify="space-between" mb="xs">
-            <Text size="sm">
-                {max - current} spots left
-            </Text>
-            <Text size="sm" fw={500}>
-                {current}/{max}
-            </Text>
-        </Group>
-    </Paper>
-);
 
-const SafetyGuidelines: React.FC = () => (
-    <Paper p="md" radius="md" bg="orange.0" withBorder>
-        <Group align="flex-start">
-            <ThemeIcon color="orange" variant="light" size="lg">
-                <IconAlertCircle size={20} />
-            </ThemeIcon>
-            <div>
-                <Text fw={500} c="orange.8" mb="xs">Safety Guidelines</Text>
-                <List spacing="xs" size="sm" c="dimmed" withPadding>
-                    <List.Item>Chat with the host before joining</List.Item>
-                    <List.Item>Pay only at the venue</List.Item>
-                    <List.Item>Follow venue rules and guidelines</List.Item>
-                    <List.Item>Report any suspicious activity</List.Item>
-                </List>
-            </div>
-        </Group>
-    </Paper>
-);
+export const DEFAULT_PARTY_DATA: SessionData = {
+    id: "",
+    title: "",
+    description: "",
+    venue_name: "",
+    venue_location: "",
+    courts: null,
+    host_name: "",
+    host_level: "",
+    session_date: "",
+    start_time: "",
+    end_time: "",
+    player_level: "",
+    max_participants: 0,
+    cost_per_person: 0,
+    status: "pending",
+    allow_cancellation: false,
+    cancellation_deadline_hours: 0,
+    confirmed_players: 0,
+    pending_players: 0,
+    participants: [],
+    created_at: "",
+    updated_at: "",
+}
+
 
 // Main Component
 const PartyView: React.FC = () => {
     const [message, setMessage] = useState('');
     const [isLiked, setIsLiked] = useState(false);
     const [activeTab, setActiveTab] = useState<string>('chat');
+    const [sessionDetails, setSessionDetails] = useState<SessionData>(DEFAULT_PARTY_DATA);
 
-    // Mock data
-    const partyDetails: PartyDetails = {
-        id: '1',
-        title: 'Casual Badminton Session',
-        location: 'Sports Complex - Court A',
-        time: 'Sep 18, 2024 16:00 - 18:00',
-        description: 'Join us for a fun badminton session! Suitable for intermediate players. All are welcome. Please bring your own racket.',
-        price: '$5/person',
-        participants: { current: 8, max: 10 },
-        court: '1',
-        level: 'Intermediate',
-        isJoined: false,
-        host: {
-            name: 'John Doe',
-            avatar: '/api/placeholder/32/32',
-            hostedParties: 15,
-        },
-        likes: 24,
-        views: 89,
+
+    const fetchSessionData = async () => {
+        try {
+            const response = await sessionService.getById("0405f815-1a23-4c46-b89a-53c940b7d684")
+            setSessionDetails(response?.data || DEFAULT_PARTY_DATA)
+        }
+        catch (error) {
+            console.error(error
+            )
+        }
     };
 
-    const participants: Participant[] = [
-        {
-            id: '1',
-            name: 'John Doe',
-            avatar: '/api/placeholder/32/32',
-            isHost: true,
-            level: 'Beginner',
-            joinedParties: 12,
-        },
-        {
-            id: '2',
-            name: 'Jane Smith',
-            avatar: '/api/placeholder/32/32',
-            isHost: false,
-            level: 'Intermediate',
-            joinedParties: 8,
-        },
-    ];
+    useEffect(() => {
+        fetchSessionData();
+    }
+        , []);
 
+    const getStatusColor = (status: string) => {
+        switch (status.toLowerCase()) {
+            case 'cancelled':
+                return 'red';
+            case 'pending':
+                return 'yellow';
+            case 'confirmed':
+                return 'green';
+            default:
+                return 'blue';
+        }
+    };
+
+    const partyDetails: PartyDetails = {
+        id: "0405f815-1a23-4c46-b89a-53c940b7d684",
+        title: "Evening Badminton Session",
+        location: "Bangkok",
+        time: ``,
+        description: "Friendly doubles matches for intermediate players",
+        price: `$${15}/person`,
+        participants: {
+            current: 0,
+            max: 4
+        },
+        court: "Updated Court Name",
+        level: "intermediate",
+        isJoined: false,
+        host: {
+            name: "John Doe",
+            avatar: '/api/placeholder/32/32',
+            hostedParties: 0,
+        },
+        likes: 0,
+        views: 0,
+        status: "cancelled"
+    };
     const messages: Message[] = [
         {
             id: '1',
             user: { name: 'John Doe', avatar: '/api/placeholder/32/32' },
-            content: 'Hello everyone! Looking forward to playing with you all.',
-            timestamp: '14:30',
-            likes: 2,
-        },
-        {
-            id: '2',
-            user: { name: 'Jane Smith', avatar: '/api/placeholder/32/32' },
-            content: 'Thanks! See you all at the court.',
-            timestamp: '14:35',
-            likes: 1,
+            content: 'Session has been cancelled.',
+            timestamp: new Date().toLocaleTimeString(),
+            likes: 0,
         },
     ];
+
+
+
 
     return (
         <Box bg="gray.0" mih="100vh">
             <Container size="xl" py="xl">
-                {/* Breadcrumbs */}
                 <Breadcrumbs mb="lg" separator={<IconChevronRight size={16} />}>
                     <Anchor href="/" onClick={(e) => {
                         e.preventDefault();
@@ -325,18 +208,28 @@ const PartyView: React.FC = () => {
                 </Breadcrumbs>
 
                 <Grid gutter="lg">
-                    {/* Main Content */}
                     <Grid.Col span={{ base: 12, md: 8 }}>
-                        {/* Party Card */}
                         <Card shadow="sm" radius="md" mb="lg" p={0} withBorder>
                             <PartyHeader
-                                party={partyDetails}
+                                party={sessionDetails}
                                 isLiked={isLiked}
                                 onLikeToggle={() => setIsLiked(!isLiked)}
                             />
 
+                            {/* Status Badge */}
+                            {sessionDetails.status && (
+                                <Box p="md">
+                                    <Badge
+                                        color={getStatusColor(sessionDetails.status)}
+                                        size="lg"
+                                        variant="filled"
+                                    >
+                                        {sessionDetails.status.toUpperCase()}
+                                    </Badge>
+                                </Box>
+                            )}
+
                             <Stack p="xl">
-                                {/* Info Grid */}
                                 <Grid>
                                     {[
                                         { icon: IconMapPin, label: 'Location', value: partyDetails.location },
@@ -349,15 +242,13 @@ const PartyView: React.FC = () => {
                                     ))}
                                 </Grid>
 
-                                {/* Description */}
                                 <div>
                                     <Text fw={500} mb="xs" size="lg">Description</Text>
                                     <Paper p="md" radius="md" bg="blue.0">
-                                        <Text>{partyDetails.description}</Text>
+                                        <Text>{sessionDetails.description}</Text>
                                     </Paper>
                                 </div>
 
-                                {/* Required Items */}
                                 <div>
                                     <Text fw={500} mb="xs" size="lg">What to Bring</Text>
                                     <Grid>
@@ -376,7 +267,6 @@ const PartyView: React.FC = () => {
                                     </Grid>
                                 </div>
 
-                                {/* Important Notes */}
                                 <div>
                                     <Text fw={500} mb="xs" size="lg">Important Notes</Text>
                                     <Paper p="md" radius="md" bg="orange.0" withBorder>
@@ -391,7 +281,6 @@ const PartyView: React.FC = () => {
                             </Stack>
                         </Card>
 
-                        {/* Chat and Participants Tabs */}
                         <Card shadow="sm" radius="md" withBorder>
                             <Tabs value={activeTab} onChange={(value) => setActiveTab(value || 'chat')}>
                                 <Tabs.List>
@@ -424,7 +313,7 @@ const PartyView: React.FC = () => {
 
                                 <Tabs.Panel value="participants" p="md">
                                     <Stack>
-                                        {participants.map((participant) => (
+                                        {sessionDetails.participants.map((participant) => (
                                             <ParticipantCard
                                                 key={participant.id}
                                                 participant={participant}
@@ -436,7 +325,6 @@ const PartyView: React.FC = () => {
                         </Card>
                     </Grid.Col>
 
-                    {/* Sidebar */}
                     <Grid.Col span={{ base: 12, md: 4 }}>
                         <Card shadow="sm" radius="md" withBorder>
                             <Card.Section p="md" bg="blue.0">
@@ -464,7 +352,6 @@ const PartyView: React.FC = () => {
                                     max={partyDetails.participants.max}
                                 />
 
-                                {/* Stats */}
                                 <Grid>
                                     <Grid.Col span={6}>
                                         <Paper p="md" radius="md" ta="center" withBorder>
@@ -492,7 +379,6 @@ const PartyView: React.FC = () => {
                                     </Grid.Col>
                                 </Grid>
 
-                                {/* Price */}
                                 <Paper p="md" radius="md" withBorder bg="green.0">
                                     <Group justify="space-between" mb="xs">
                                         <Text>Fee</Text>
@@ -501,11 +387,11 @@ const PartyView: React.FC = () => {
                                     <Text size="sm" c="dimmed">Pay at the venue</Text>
                                 </Paper>
 
-                                {/* Action Buttons */}
                                 <Button
                                     size="lg"
-                                    color={partyDetails.isJoined ? 'gray' : 'blue'}
+                                    color={sessionDetails.status === 'cancelled' ? 'gray' : partyDetails.isJoined ? 'gray' : 'blue'}
                                     variant={partyDetails.isJoined ? 'light' : 'filled'}
+                                    disabled={sessionDetails.status === 'cancelled'}
                                     style={{
                                         transition: 'transform 0.2s ease',
                                         '&:hover': {
@@ -513,7 +399,8 @@ const PartyView: React.FC = () => {
                                         },
                                     }}
                                 >
-                                    {partyDetails.isJoined ? 'Leave Party' : 'Join Party'}
+                                    {sessionDetails.status === 'cancelled' ? 'Session Cancelled' :
+                                        partyDetails.isJoined ? 'Leave Party' : 'Join Party'}
                                 </Button>
 
                                 <Button
@@ -530,10 +417,8 @@ const PartyView: React.FC = () => {
                                     Chat with Host
                                 </Button>
 
-                                {/* Safety Notice */}
                                 <SafetyGuidelines />
 
-                                {/* Additional Information */}
                                 <Paper p="md" radius="md" withBorder>
                                     <Stack>
                                         <Text fw={500}>Additional Information</Text>
@@ -552,7 +437,6 @@ const PartyView: React.FC = () => {
                                     </Stack>
                                 </Paper>
 
-                                {/* Share Section */}
                                 <Paper p="md" radius="md" withBorder>
                                     <Text fw={500} mb="md">Share This Party</Text>
                                     <Group grow>

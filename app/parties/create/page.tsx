@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { z } from 'zod';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import toast from 'react-hot-toast';
 import {
     Container,
     Title,
@@ -43,7 +44,7 @@ import {
 } from '@tabler/icons-react';
 import { DatePickerInput, TimeInput } from '@mantine/dates';
 import { useRouter } from 'next/navigation';
-import { VenueList, venueService, VenueListDTO } from '@/services';
+import { VenueList, venueService, VenueListDTO, CreateSessionDTO, sessionService } from '@/services';
 
 // Types and Schema
 const skillLevels = ['beginner', 'intermediate', 'advanced'] as const;
@@ -63,7 +64,6 @@ const partySchema = z.object({
         required_error: 'Please select a skill level',
     }),
     description: z.string()
-        .min(10, 'Description must be at least 10 characters')
         .max(500, 'Description must be less than 500 characters'),
     venue: z.string().min(1, 'Please select a venue'),
     date: z.date({
@@ -80,6 +80,7 @@ const partySchema = z.object({
         .max(10000, 'Cost cannot exceed 10000'),
     rules: z.array(z.string().min(1, 'Rule cannot be empty')),
     allowCancellation: z.boolean(),
+    isPublic: z.boolean(),
 });
 
 type PartyFormData = z.infer<typeof partySchema>;
@@ -89,11 +90,11 @@ const CreateParty = () => {
     const [loading, setLoading] = useState(false);
     const [venues, setVenues] = useState<VenueList[] | null>(null);
 
-
     const fetchVenues = async () => {
         try {
-            // Fetch venues from API
-            const venueResponse: VenueListDTO | null = await venueService.list();
+            const venueResponse: VenueListDTO | null = await venueService.list({
+                limit: 1000,
+            });
             if (venueResponse) {
                 setVenues(venueResponse.venues);
             }
@@ -101,12 +102,10 @@ const CreateParty = () => {
         catch (error) {
             console.error('Error fetching venues:', error);
         }
-
     }
 
     useEffect(() => {
         fetchVenues();
-
     }, []);
 
     const {
@@ -130,23 +129,64 @@ const CreateParty = () => {
             costPerPerson: 0,
             rules: ['Bring your own racket', 'Arrive 15 minutes early'],
             allowCancellation: true,
+            isPublic: true,
         },
     });
 
-
-    const onSubmit = async (data: PartyFormData) => {
+    const formatDateToISOString = (date: Date): string => {
         try {
-            setLoading(true);
-            console.log('Submitting form data:', data);
-            // API call would go here
-            // await createParty(data);
-            router.push('/parties'); // Redirect after success
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+
+            return `${year}-${month}-${day}`;
         } catch (error) {
-            console.error('Error submitting form:', error);
-        } finally {
-            setLoading(false);
+            console.error('Error formatting date:', error);
+            return '';
         }
     };
+
+    const onSubmit = async (data: PartyFormData) => {
+        const submitPromise = new Promise(async (resolve, reject) => {
+            try {
+                setLoading(true);
+                const formattedDate = formatDateToISOString(data.date);
+
+                const partyData: CreateSessionDTO = {
+                    venue_id: data.venue,
+                    title: data.name,
+                    description: data.description,
+                    session_date: formattedDate,
+                    start_time: data.startTime,
+                    end_time: data.endTime,
+                    player_level: data.skillLevel,
+                    max_participants: data.maxParticipants,
+                    cost_per_person: data.costPerPerson,
+                    allow_cancellation: data.allowCancellation,
+                    cancellation_deadline_hours: 2,
+                    rules: data.rules,
+                    is_public: data.isPublic,
+                };
+
+                await sessionService.create(partyData);
+                resolve('Party created successfully!');
+                router.push('/parties');
+            } catch (error) {
+                console.error('Error submitting form:', error);
+                reject(new Error('Failed to create party. Please try again.'));
+            } finally {
+                setLoading(false);
+            }
+        });
+
+        toast.promise(submitPromise, {
+            loading: 'Creating your party...',
+            success: (message) => message as string,
+            error: (err) => err.message
+        });
+    };
+
+
 
 
 
@@ -437,6 +477,30 @@ const CreateParty = () => {
                                         />
                                     </Group>
                                 </Paper>
+                                <Paper p="md" withBorder radius="md">
+                                    <Group justify="space-between">
+                                        <div>
+                                            <Text fw={500}>
+                                                Public Party
+                                            </Text>
+                                            <Text size="sm" c="dimmed">
+                                                Anyone can join this party
+                                            </Text>
+                                        </div>
+                                        <Controller
+                                            name="isPublic"
+                                            control={control}
+                                            render={({ field }) => (
+                                                <Switch
+                                                    checked={field.value}
+                                                    onChange={(event) => field.onChange(event.currentTarget.checked)}
+                                                    size="lg"
+                                                />
+                                            )}
+                                        />
+                                    </Group>
+                                </Paper>
+
                             </Stack>
                         </Card>
 

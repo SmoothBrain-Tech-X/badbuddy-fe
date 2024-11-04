@@ -1,15 +1,78 @@
-// src/services/auth.ts
 import Cookies from 'js-cookie';
 import { AuthResponse, LoginDTO, RegisterUserDTO, User, UserProfileDTO } from '@/services';
 import { Api } from '@/services/api';
+import { createLocalStorage } from '@/stores/local-storage';
+
+// Create storage instances
+const storage = createLocalStorage();
 
 export class AuthService {
-  constructor(private api: Api) {}
+  private tokenCheckInterval: NodeJS.Timeout | null = null;
+
+  constructor(private api: Api) {
+    if (typeof window !== 'undefined') {
+      this.startTokenCheck();
+    }
+  }
+
+  private startTokenCheck() {
+    if (this.tokenCheckInterval) {
+      clearInterval(this.tokenCheckInterval);
+    }
+
+    this.tokenCheckInterval = setInterval(() => {
+      if (!this.isTokenValid()) {
+        this.logout();
+      }
+    }, 60000);
+  }
+
+  private stopTokenCheck() {
+    if (this.tokenCheckInterval) {
+      clearInterval(this.tokenCheckInterval);
+      this.tokenCheckInterval = null;
+    }
+  }
+
+  private isTokenValid(): boolean {
+    const token = this.getToken();
+    if (!token) return false;
+
+    try {
+      const cookieToken = Cookies.get('access_token');
+      const localToken = storage.get('access_token');
+
+      // In SSR context, only check cookie
+      if (typeof window === 'undefined') {
+        return Boolean(cookieToken);
+      }
+
+      // In browser, token should exist in both places
+      if (Boolean(cookieToken) !== Boolean(localToken)) {
+        return false;
+      }
+
+      // Validate JWT structure and expiration
+      const parts = token.split('.');
+      if (parts.length !== 3) return false;
+
+      const payload = JSON.parse(atob(parts[1]));
+      const exp = payload.exp;
+
+      if (!exp || Date.now() >= exp * 1000) {
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Token validation error:', error);
+      return false;
+    }
+  }
 
   async register(data: RegisterUserDTO): Promise<AuthResponse> {
     try {
       const response = await this.api.post<AuthResponse>('/users/register', data);
-
       return response;
     } catch (error) {
       console.error('Registration error:', error);
@@ -29,6 +92,9 @@ export class AuthService {
       }
 
       this.setToken(response.access_token, data.remember_me);
+      if (typeof window !== 'undefined') {
+        this.startTokenCheck();
+      }
       return response;
     } catch (error) {
       console.error('Login error:', error);
@@ -38,6 +104,11 @@ export class AuthService {
 
   async getProfile(): Promise<UserProfileDTO> {
     try {
+      if (!this.isTokenValid()) {
+        this.logout();
+        throw new Error('Invalid token');
+      }
+
       const user = await this.api.get<UserProfileDTO>('/users/profile');
       if (!user) {
         throw new Error('Failed to fetch user profile');
@@ -51,6 +122,11 @@ export class AuthService {
 
   async updateProfile(data: Partial<User>): Promise<User> {
     try {
+      if (!this.isTokenValid()) {
+        this.logout();
+        throw new Error('Invalid token');
+      }
+
       const updatedUser = await this.api.put<User>('/users/profile', data);
       if (!updatedUser) {
         throw new Error('Failed to update profile');
@@ -64,8 +140,13 @@ export class AuthService {
 
   logout(): void {
     try {
+      this.stopTokenCheck();
       this.removeToken();
       this.clearStoredData();
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('auth:logout'));
+      }
     } catch (error) {
       console.error('Logout error:', error);
       this.forceLogout();
@@ -74,19 +155,18 @@ export class AuthService {
 
   private setToken(token: string, rememberMe: boolean = false): void {
     try {
-      // Set token in both cookie and localStorage
       const cookieOptions = {
-        expires: rememberMe ? 7 : 1, // 7 days if remember me, 1 day if not
+        expires: rememberMe ? 7 : 1,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict' as const,
         path: '/',
       };
 
       Cookies.set('access_token', token, cookieOptions);
-      localStorage.setItem('access_token', token);
+      storage.set('access_token', token);
 
       if (rememberMe) {
-        localStorage.setItem('remember_me', 'true');
+        storage.set('remember_me', 'true');
       }
     } catch (error) {
       console.error('Error setting token:', error);
@@ -100,31 +180,51 @@ export class AuthService {
   }
 
   private clearStoredData(): void {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('remember_me');
-    sessionStorage.clear();
+    storage.remove('access_token');
+    storage.remove('remember_me');
+
+    if (typeof window !== 'undefined') {
+      sessionStorage?.clear();
+    }
   }
 
   private forceLogout(): void {
     try {
+      this.stopTokenCheck();
       Cookies.remove('access_token', { path: '/' });
-      localStorage.clear();
-      sessionStorage.clear();
+      storage.clear();
+
+      if (typeof window !== 'undefined') {
+        sessionStorage?.clear();
+        window.dispatchEvent(new CustomEvent('auth:logout'));
+      }
     } catch (error) {
       console.error('Force logout error:', error);
     }
   }
 
   getToken(): string | null {
-    return Cookies.get('access_token') || localStorage.getItem('access_token');
+    const cookieToken = Cookies.get('access_token');
+    const localToken = storage.get('access_token');
+
+    if (typeof window === 'undefined') {
+      return cookieToken || null;
+    }
+
+    if (cookieToken && localToken && cookieToken === localToken) {
+      return cookieToken;
+    }
+
+    this.logout();
+    return null;
   }
 
   isAuthenticated(): boolean {
-    return !!this.getToken();
+    return this.isTokenValid();
   }
 }
 
-// Create a single instance
+// Single instance
 export const authService = new AuthService(
   new Api(process.env.API_BASE_URL || 'http://localhost:8004/api')
 );

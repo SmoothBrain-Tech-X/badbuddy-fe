@@ -16,6 +16,15 @@ export interface Court {
   status: 'available' | 'occupied' | 'maintenance';
 }
 
+export interface rule {
+  rule: string;
+}
+
+export interface facility {
+  id: string;
+  name: string;
+}
+
 export interface Venue extends BaseEntity {
   id: string;
   name: string;
@@ -30,6 +39,8 @@ export interface Venue extends BaseEntity {
   rating: number;
   total_reviews: number;
   courts: Court[];
+  facilities: facility[];
+  rules: rule[];
 }
 
 export interface VenueDTO {

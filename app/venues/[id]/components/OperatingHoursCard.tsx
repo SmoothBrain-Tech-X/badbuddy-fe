@@ -1,20 +1,21 @@
 import React from 'react';
 import { Card, Stack, Title, Table, Text, Badge, Group } from '@mantine/core';
-import { format, parseISO } from 'date-fns';
 import { OpenRange } from '@/services';
 
 interface OperatingHoursCardProps {
     openRange: OpenRange[];
 }
 
+
 const formatTime = (timeString: string) => {
     try {
-        return format(parseISO(timeString), 'HH:mm');
+        const match = timeString.match(/T(\d{2}:\d{2})/);
+        return match ? match[1] : 'Invalid time';
     } catch (error) {
+        console.error('Error formatting time:', error);
         return 'Invalid time';
     }
 };
-
 const OperatingHoursCard = ({ openRange }: OperatingHoursCardProps) => (
     <Card shadow="sm" radius="md" withBorder>
         <Stack>

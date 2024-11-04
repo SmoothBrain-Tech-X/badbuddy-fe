@@ -1,12 +1,15 @@
+// stores/auth.store.ts
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { authService, LoginDTO, User, UserProfileDTO } from '@/services';
+import { authService, LoginDTO, UserProfileDTO } from '@/services';
 
 interface AuthState {
   user: UserProfileDTO | null;
   isLoading: boolean;
   error: string | null;
   isAuthenticated: boolean;
+  lastProfileFetch: number;
+  tokenExpiresAt: number | null;
   setUser: (user: UserProfileDTO | null) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
@@ -20,9 +23,11 @@ export const useAuthStore = create<AuthState>()(
   devtools(
     (set, get) => ({
       user: null,
-      isLoading: true,
+      isLoading: true, // Start with loading true
       error: null,
       isAuthenticated: false,
+      lastProfileFetch: 0,
+      tokenExpiresAt: null,
 
       setUser: (user: UserProfileDTO | null) => set({ user, isAuthenticated: !!user }),
 
@@ -36,22 +41,28 @@ export const useAuthStore = create<AuthState>()(
         try {
           set({ error: null, isLoading: true });
 
+          // Login and get token
           await authService.login(data);
+
+          // Get user profile
           const profile = await authService.getProfile();
 
           set({
             user: profile,
             isAuthenticated: true,
             error: null,
+            lastProfileFetch: Date.now(),
           });
 
-          // Handle remember me
           if (data.remember_me) {
             localStorage.setItem('remember_me', 'true');
           }
         } catch (error: any) {
-          const errorMessage = error.message || 'Login failed';
-          set({ error: errorMessage, isAuthenticated: false });
+          set({
+            error: error.message || 'Login failed',
+            isAuthenticated: false,
+            user: null,
+          });
           throw error;
         } finally {
           set({ isLoading: false });
@@ -60,11 +71,13 @@ export const useAuthStore = create<AuthState>()(
 
       logout: async () => {
         try {
-          authService.logout();
+          await authService.logout();
           set({
             user: null,
             isAuthenticated: false,
             error: null,
+            lastProfileFetch: 0,
+            tokenExpiresAt: null,
           });
         } catch (error: any) {
           set({ error: error.message || 'Logout failed' });
@@ -84,11 +97,13 @@ export const useAuthStore = create<AuthState>()(
             return false;
           }
 
+          // Get fresh profile if needed
           const profile = await authService.getProfile();
           set({
             user: profile,
             isAuthenticated: true,
             error: null,
+            lastProfileFetch: Date.now(),
           });
 
           return true;

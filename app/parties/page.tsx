@@ -17,6 +17,7 @@ import {
 } from '@tabler/icons-react';
 import { useRouter } from 'next/navigation';
 import { sessionService, Session, User } from '@/services';
+import PartyCard from './components/PartyCard';
 
 // Types
 
@@ -39,121 +40,6 @@ const TIME_FILTERS: FilterOption[] = [
     { value: 'next_week', label: 'Next Week' },
 ];
 
-// Components
-const PartyCard: React.FC<{ party: Session; onJoinLeave: () => Promise<void> }> = ({
-    party,
-    onJoinLeave,
-}) => {
-    const router = useRouter();
-    const isJoined = false; // This should be determined by checking current user's participation
-
-    return (
-        <Card shadow="sm" radius="md" withBorder className="h-full">
-            <Stack>
-                <Group justify="space-between">
-                    <Group>
-                        <Box pos="relative">
-                            <Avatar
-                                src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8YXZhdGFyfGVufDB8fDB8fHww"
-                                size="lg"
-                                radius="md"
-                            />
-                            <ActionIcon
-                                variant="filled"
-                                color="yellow"
-                                size="xs"
-                                pos="absolute"
-                                bottom={-4}
-                                right={-4}
-                                radius="md"
-                            >
-                                <IconCrown size={12} />
-                            </ActionIcon>
-                        </Box>
-                        <div>
-                            <Text fw={700} size="lg" lineClamp={1}>{party.title}</Text>
-                            <Text size="sm" c="dimmed">{party.host_name}</Text>
-                        </div>
-                    </Group>
-                </Group>
-
-                <Group gap="xs">
-                    <Badge color="blue" variant="light">
-                        {party.player_level}
-                    </Badge>
-                    {party.status === 'full' && (
-                        <Badge color="red" variant="light">
-                            Full
-                        </Badge>
-                    )}
-                </Group>
-
-                <Grid>
-                    <Grid.Col span={6}>
-                        <Paper p="sm" radius="md" bg="gray.0">
-                            <Group>
-                                <IconMapPin size={16} className="text-blue-600" />
-                                <Text size="sm" lineClamp={1}>{party.venue_location}</Text>
-                            </Group>
-                        </Paper>
-                    </Grid.Col>
-                    <Grid.Col span={6}>
-                        <Paper p="sm" radius="md" bg="gray.0">
-                            <Group>
-                                <IconClock size={16} className="text-blue-600" />
-                                <Text size="sm" lineClamp={1}>
-                                    {new Date(party.start_time).toLocaleTimeString([], {
-                                        hour: '2-digit',
-                                        minute: '2-digit',
-                                    })}
-                                </Text>
-                            </Group>
-                        </Paper>
-                    </Grid.Col>
-                </Grid>
-
-                <Stack gap="xs">
-                    <Text size="sm" fw={500} c="dimmed">Participants</Text>
-                    <Group justify="space-between">
-                        <Group gap="xs">
-                            <ThemeIcon size="sm" variant="light">
-                                <IconUsers size={14} />
-                            </ThemeIcon>
-                            <Text size="sm">
-                                {`
-                                    ${party.confirmed_players} Confirmed
-                                    ${party.pending_players} Pending
-                                `}
-                            </Text>
-                        </Group>
-                        <Text fw={500} c="blue">
-                            ฿{party.cost_per_person}/person
-                        </Text>
-                    </Group>
-                    <Box>
-                        <Button
-                            fullWidth
-                            variant="light"
-                            onClick={() => router.push(`/parties/${party.id}`)}
-                            mb="xs"
-                        >
-                            View Details
-                        </Button>
-                        <Button
-                            fullWidth
-                            variant={isJoined ? 'light' : 'filled'}
-                            color={isJoined ? 'gray' : 'blue'}
-                            onClick={onJoinLeave}
-                            disabled={party.status === 'full' && !isJoined}
-                        >
-                            {isJoined ? 'Leave Party' : 'Join Party'}
-                        </Button>
-                    </Box>
-                </Stack>
-            </Stack>
-        </Card>
-    );
-};
 
 const FilterSection: React.FC<{
     visible: boolean;
