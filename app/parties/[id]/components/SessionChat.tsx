@@ -130,13 +130,13 @@ const SessionChat: React.FC<SessionChatProps> = ({ sessionId, isDisabled }) => {
   }, [loading]);
 
   const connectWebSocket = useCallback(() => {
-    if (!sessionId) return;
+    if (!chatId) return;
 
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.close();
     }
 
-    wsRef.current = new WebSocket(`${CONFIG.WS_BASE_URL}/ws/${sessionId}`);
+    wsRef.current = new WebSocket(`${CONFIG.WS_BASE_URL}/ws/${chatId}`);
 
     wsRef.current.onopen = () => {
       console.log('WebSocket Connected');
@@ -163,12 +163,13 @@ const SessionChat: React.FC<SessionChatProps> = ({ sessionId, isDisabled }) => {
         if (data.chat_massage) {
           setMessages((prev) => [...prev, data.chat_massage]);
         }
-        scrollToBottom();
+        fetchInitialMessages();
+        // scrollToBottom();
       } catch (error) {
         console.error('Error parsing message:', error);
       }
     };
-  }, [sessionId]);
+  }, [chatId]);
 
   useEffect(() => {
     connectWebSocket();
@@ -230,7 +231,7 @@ const SessionChat: React.FC<SessionChatProps> = ({ sessionId, isDisabled }) => {
 
       if (!response.ok) throw new Error('Failed to send message');
       setMessageInput('');
-      fetchInitialMessages(); // Refresh messages after sending
+      // fetchInitialMessages(); // Refresh messages after sending
     } catch (error) {
       console.error('Error sending message:', error);
     }
