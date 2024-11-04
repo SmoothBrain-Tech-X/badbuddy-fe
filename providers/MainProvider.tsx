@@ -12,7 +12,7 @@ const MainProvider = (props: Props) => {
   const queryClient = new QueryClient();
   return (
     <QueryClientProvider client={queryClient}>
-      <div style={{}}>
+      <div style={{ marginBottom: '85px' }}>
         <Navbar />
       </div>
       {props.children}

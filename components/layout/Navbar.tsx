@@ -159,12 +159,12 @@ const Navbar = () => {
       </Modal>
 
       <Paper
-        shadow="sm"
+        radius={0}
         p="md"
-        withBorder
         style={{
           top: 0,
           left: 0,
+          position: 'fixed',
           right: 0,
           zIndex: 1000,
           backgroundColor: 'var(--mantine-color-body)',
