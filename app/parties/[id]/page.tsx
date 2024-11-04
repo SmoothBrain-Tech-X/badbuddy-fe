@@ -66,16 +66,32 @@ const PartyView: React.FC = () => {
   };
 
   const checkDisabled = () => {
-    return getSession.data?.data.participants.find(
-      (item) => item.user_id === auth.user?.id && item.status === 'cancelled'
-    )
-      ? true
-      : false;
+    if (
+      getSession.data?.data.participants.find(
+        (item) => item.user_id === auth.user?.id && item.status === 'cancelled'
+      )
+    ) {
+      return true;
+    }
+
+    //check party full
+    if (
+      (getSession.data?.data.participants?.length ?? 0) >=
+      (getSession.data?.data.max_participants ?? 0)
+    ) {
+      return true;
+    }
+
+    // is owner
+    if (getSession.data?.data.host_id === auth.user?.id) {
+      return true;
+    }
+
+    return false;
   };
 
   const isOwner = () => {
-    return true;
-    // return getSession.data?.data.ho === auth.user?.id;
+    return getSession.data?.data.host_id === auth.user?.id;
   };
 
   const onJoin = () => {
@@ -255,7 +271,7 @@ const PartyView: React.FC = () => {
                   </Box>
                 </Stack>
               </Card>
-              <Card shadow="sm" radius="md" withBorder mt="md">
+              <Card radius="md" withBorder mt="md">
                 <Tabs defaultValue="chat">
                   <Tabs.List>
                     <Tabs.Tab value="chat" leftSection={<IconMessageCircle size={16} />}>
@@ -272,7 +288,7 @@ const PartyView: React.FC = () => {
                   </Tabs.List>
 
                   <Tabs.Panel value="chat">
-                    <SessionChat sessionId={sessionId} />
+                    <SessionChat sessionId={sessionId} isDisabled={!isJoin()} />
                   </Tabs.Panel>
 
                   <Tabs.Panel value="participants">
@@ -325,7 +341,7 @@ const PartyView: React.FC = () => {
 
             {/* Sidebar */}
             <Grid.Col span={{ base: 12, md: 4 }}>
-              <Card shadow="sm" radius="md" withBorder>
+              <Card shadow="sm" radius="md" withBorder style={{ position: 'sticky', top: 20 }}>
                 <Card.Section p="md" bg="blue.0">
                   <Group>
                     <div>

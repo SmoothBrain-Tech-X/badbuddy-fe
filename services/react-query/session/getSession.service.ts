@@ -12,6 +12,7 @@ interface Data {
   description: string;
   venue_name: string;
   venue_location: string;
+  host_id: string;
   host_name: string;
   host_level: string;
   session_date: string;
