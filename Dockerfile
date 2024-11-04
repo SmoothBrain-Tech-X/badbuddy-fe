@@ -1,29 +1,52 @@
-# Install dependencies only when needed
-FROM node:16-alpine AS deps
-WORKDIR /app
-COPY package.json pnpm-lock.yaml ./
-RUN yarn global add pnpm && pnpm install --frozen-lockfile
+##### DEPENDENCIES
 
-# Rebuild the source code only when needed
-FROM node:16-alpine AS builder
+FROM --platform=linux/amd64 node:20-alpine AS deps
+RUN apk add --no-cache libc6-compat openssl build-base python3
+RUN apk add --no-cache \
+    udev \
+    ttf-freefont \
+    chromium
 WORKDIR /app
-COPY . .
+
+# Install dependencies based on the preferred package manager
+
+COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml\* ./
+
+RUN yarn
+
+##### BUILDER
+
+FROM --platform=linux/amd64 node:20-alpine AS builder
+WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
-RUN SKIP_ENV_VALIDATION=1 pnpm run build
+COPY --from=deps /app/package.json ./package.json
+COPY . .
 
-# Production image, copy all the files and run next
-FROM node:16-alpine AS runner
+# ENV NEXT_TELEMETRY_DISABLED 1
+
+RUN SKIP_ENV_VALIDATION=1 yarn run build
+
+##### RUNNER
+
+FROM --platform=linux/amd64 node:20-alpine AS runner
+RUN apk add --no-cache \
+    udev \
+    ttf-freefont \
+    chromium
 WORKDIR /app
 
 ENV NODE_ENV production
 
-# You only need to copy next.config.js if you are NOT using the default configuration
-COPY --from=builder /app/next.config.mjs ./
+# ENV NEXT_TELEMETRY_DISABLED 1
+
+COPY --from=builder /app/next.config.js ./
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
 
-EXPOSE 3000
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
 
-CMD ["pnpm", "start"]
+EXPOSE 3000
+ENV PORT 3000
+
+CMD ["server.js"]
