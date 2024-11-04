@@ -202,7 +202,10 @@ const SessionChat: React.FC<SessionChatProps> = ({ sessionId, isDisabled }) => {
         setMessages(data.data.chat_massage);
       }
       if (data.data?.chat_id) {
-        setChatId(data.data.chat_id);
+        if (chatId !== data.data.chat_id) {
+          setChatId(data.data.chat_id);
+        }
+        // setChatId(data.data.chat_id);
       }
     } catch (error) {
       console.error('Error fetching messages:', error);
