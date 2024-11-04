@@ -1,5 +1,5 @@
+import { axiosAPIWithoutAuth } from "@/utils/axios";
 import _ from "lodash";
-import { axiosAPIWithoutAuth } from "utils/axios";
 
 interface Openrange {
   day: string;

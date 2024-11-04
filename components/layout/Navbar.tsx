@@ -195,11 +195,6 @@ const Navbar = () => {
                         <Text size="sm" fw={500}>
                           {link.label}
                         </Text>
-                        {link.badge && (
-                          <Badge size="xs" variant="filled" color="red">
-                            {link.badge}
-                          </Badge>
-                        )}
                       </Group>
                     </UnstyledButton>
                   )
@@ -316,11 +311,6 @@ const Navbar = () => {
                       <Text size="sm" fw={500}>
                         {link.label}
                       </Text>
-                      {link.badge && (
-                        <Badge size="xs" variant="filled" color="red">
-                          {link.badge}
-                        </Badge>
-                      )}
                     </Group>
                   </UnstyledButton>
                 )
