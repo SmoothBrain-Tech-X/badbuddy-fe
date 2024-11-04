@@ -187,7 +187,7 @@ const VenuesSection: React.FC = () => {
       </Group>
 
       <Grid>
-        {getVenues.data?.venues.map((venue) => (
+        {getVenues.data?.venues.slice(0, 2).map((venue) => (
           <Grid.Col key={venue.id} span={{ base: 12, sm: 6 }}>
             <Card p={0} radius="md" withBorder>
               <Card.Section>

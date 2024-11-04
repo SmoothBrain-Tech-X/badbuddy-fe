@@ -355,7 +355,7 @@ export default function BookingManagement() {
           </Grid.Col>
           {/* Bookings List */}
           <Grid.Col span={12} style={{ flex: 1 }}>
-            <Card shadow="sm" radius="md" withBorder h="100%">
+            <Card radius="md" withBorder h="100%">
               <Stack h="100%">
                 <Tabs
                   value={activeTab}
