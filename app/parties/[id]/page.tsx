@@ -221,9 +221,12 @@ const PartyView: React.FC = () => {
           <Grid gutter="lg">
             <Grid.Col span={{ base: 12, md: 8 }}>
               {/* Main Content Card */}
-              <Card shadow="sm" radius="lg" p={0} withBorder className="overflow-hidden">
+              <Card radius="lg" p={0} withBorder className="overflow-hidden">
                 <Stack p="xl" gap="xl">
                   {/* Info Grid */}
+                  <Text size="xl" fw={500}>
+                    {getSession.data?.data.title}
+                  </Text>
                   <Grid gutter="lg">
                     {[
                       {
@@ -241,7 +244,7 @@ const PartyView: React.FC = () => {
                     ].map((item, index) => (
                       <Grid.Col span={{ base: 12, sm: 6, md: 6 }} key={index}>
                         <Paper
-                          shadow="sm"
+                          withBorder
                           p="lg"
                           className={`h-32 flex flex-col items-center justify-center text-center rounded-xl bg-gradient-to-br from-${item.color}-50 to-white hover:shadow-md transition-all duration-200 hover:scale-[1.02]`}
                         >

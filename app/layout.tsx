@@ -1,6 +1,7 @@
 import '@mantine/core/styles.css';
 import '@mantine/dates/styles.css';
 
+import { Anuphan } from "next/font/google";
 import React from 'react';
 import { Toaster } from 'react-hot-toast';
 import { ColorSchemeScript, MantineProvider } from '@mantine/core';
@@ -17,6 +18,12 @@ export const metadata = {
   description: 'Connect with badminton players and book courts',
 };
 
+const fontSans = Anuphan({
+    subsets: ["latin"],
+    variable: "--font-sans",
+  });
+  
+
 export default function RootLayout({ children }: { children: any }) {
   return (
     <html lang="en" suppressHydrationWarning>
@@ -28,7 +35,7 @@ export default function RootLayout({ children }: { children: any }) {
           content="minimum-scale=1, initial-scale=1, width=device-width, user-scalable=no"
         />
       </head>
-      <body>
+      <body className={fontSans.className}>
         <MantineProvider theme={theme}>
           <MainProvider>
             <ModalsProvider>
