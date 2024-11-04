@@ -5,7 +5,7 @@ interface CompletedStepProps {
 }
 
 export const CompletedStep: React.FC<CompletedStepProps> = () => (
-    <Card shadow="md" radius="md" p="xl" mt="md" withBorder>
+    <Card p="xl" mt="md">
         <Stack align="center">
             <ThemeIcon
                 radius="md"

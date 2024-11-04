@@ -72,7 +72,7 @@ const LoginContent = () => {
   };
 
   return (
-    <Box bg="gray.0" mih="100vh">
+    <Box bg="gray.0" mih="89vh">
       <Container size="xs" py="xl">
         <Stack gap="lg">
           <Stack align="center">
@@ -87,7 +87,7 @@ const LoginContent = () => {
             </Text>
           </Stack>
 
-          <Card shadow="md" radius="md" p="xl" withBorder>
+          <Card radius="md" p="xl">
             <form onSubmit={handleSubmit(handleFormSubmit)}>
               <Stack>
                 <TextInput
@@ -160,7 +160,7 @@ const LoginContent = () => {
             </Anchor>
           </Text>
 
-          <Paper p="md" radius="md" bg="blue.0" withBorder>
+          {/* <Paper p="md" radius="md" bg="blue.0" withBorder>
             <Group>
               <ThemeIcon variant="light" size="lg" color="blue" radius="xl">
                 <IconShieldCheck size={rem(20)} />
@@ -174,7 +174,7 @@ const LoginContent = () => {
                 </Text>
               </div>
             </Group>
-          </Paper>
+          </Paper> */}
 
           <Text size="xs" c="dimmed" ta="center">
             By signing in, you agree to our{' '}

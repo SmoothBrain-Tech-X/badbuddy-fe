@@ -49,7 +49,7 @@ export const ProfileStep: React.FC<ProfileStepProps> = ({
     }, []);
 
     return (
-        <Card shadow="md" radius="md" p="xl" mt="md" withBorder>
+        <Card p="xl" mt="md">
             <form onSubmit={onSubmit}>
                 <Stack>
                     <Group grow>
