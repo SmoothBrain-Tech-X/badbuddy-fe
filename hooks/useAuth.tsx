@@ -13,7 +13,6 @@ interface AuthError extends Error {
 
 export function useAuth() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const {
     user,
     isLoading,
