@@ -45,6 +45,8 @@ const VenueDetailPage = () => {
         rules: [],
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
+        latitude: 0,
+        longitude: 0,
     });
     const [reviews, setReviews] = useState<Review[]>([]);
     const [selectedCourt, setSelectedCourt] = useState<string | null>(null);

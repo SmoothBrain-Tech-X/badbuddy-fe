@@ -44,4 +44,12 @@ export class SessionService {
       params: { include_history: includeHistory },
     });
   }
+
+  async getHostedSessions(): Promise<sessionResponseDTO | null> {
+    return this.api.get<sessionResponseDTO>('/sessions/host/me');
+  }
+
+  async getJoinedSessions(): Promise<sessionResponseDTO | null> {
+    return this.api.get<sessionResponseDTO>('/sessions/join/me');
+  }
 }

@@ -59,6 +59,7 @@ export interface Participant {
   joined_at: string;
   cancelled_at?: string;
   avatar_url?: string;
+  player_level?: string;
 }
 
 export interface SessionData extends BaseEntity {
@@ -82,6 +83,7 @@ export interface SessionData extends BaseEntity {
   confirmed_players: number;
   pending_players: number;
   participants: Participant[];
+  join_status: 'host' | 'confirmed' | 'pending' | 'cancelled' | 'not_joined';
 }
 
 export interface sessionResponseDTO {

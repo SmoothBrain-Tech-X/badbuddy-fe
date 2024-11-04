@@ -3684,6 +3684,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@mantine/modals@npm:^7.13.4":
+  version: 7.13.4
+  resolution: "@mantine/modals@npm:7.13.4"
+  peerDependencies:
+    "@mantine/core": 7.13.4
+    "@mantine/hooks": 7.13.4
+    react: ^18.2.0
+    react-dom: ^18.2.0
+  checksum: 10c0/f630d67bd3beaa1e9f95f4a536e51f9658ab9d226b8627cc1165f661469e5cd94e8402c432a8cb8998755134c3f49008b1d6d19a2ac450008027546af54db7b1
+  languageName: node
+  linkType: hard
+
 "@mantine/notifications@npm:^7.13.4":
   version: 7.13.4
   resolution: "@mantine/notifications@npm:7.13.4"
@@ -12466,6 +12478,7 @@ __metadata:
     "@mantine/dates": "npm:^7.13.4"
     "@mantine/form": "npm:^7.13.4"
     "@mantine/hooks": "npm:^7.13.4"
+    "@mantine/modals": "npm:^7.13.4"
     "@mantine/notifications": "npm:^7.13.4"
     "@next/bundle-analyzer": "npm:^14.2.4"
     "@next/eslint-plugin-next": "npm:^14.2.4"

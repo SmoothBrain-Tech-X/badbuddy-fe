@@ -8,6 +8,7 @@ import { theme } from '../theme';
 import MainProvider from '@/providers/MainProvider';
 import { AuthProvider } from '@/providers/AuthProvider';
 import { Notifications } from '@mantine/notifications';
+import { ModalsProvider } from '@mantine/modals';
 
 import '@mantine/notifications/styles.css'; // Don't forget to import styles
 
@@ -30,19 +31,24 @@ export default function RootLayout({ children }: { children: any }) {
       <body>
         <MantineProvider theme={theme}>
           <MainProvider>
-            <AuthProvider>
-              <Notifications position="top-right" zIndex={2077} />
+            <ModalsProvider>
 
-              <Toaster
-                position="bottom-right"
-                toastOptions={{
-                  duration: 3000,
-                  loading: {
-                    duration: Infinity,
-                  },
-                }}
-              />
-              {children}</AuthProvider>
+              <AuthProvider>
+
+                <Notifications position="top-right" zIndex={2077} />
+
+                <Toaster
+                  position="bottom-right"
+                  toastOptions={{
+                    duration: 3000,
+                    loading: {
+                      duration: Infinity,
+                    },
+                  }}
+                />
+                {children}</AuthProvider>
+            </ModalsProvider>
+
           </MainProvider>
         </MantineProvider>
       </body>

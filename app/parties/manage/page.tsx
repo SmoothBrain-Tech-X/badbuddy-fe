@@ -11,7 +11,6 @@ import {
     Badge,
     Button,
     Stack,
-    Avatar,
     Paper,
     Box,
     Grid,
@@ -24,105 +23,84 @@ import {
     IconUsers,
     IconClock,
     IconTarget,
-    IconUserCircle,
     IconCalendar,
 } from '@tabler/icons-react';
-import { sessionService, SessionData, sessionResponseDTO, Participant } from '@/services';
+import { sessionService } from '@/services';
+import { useRouter } from 'next/navigation';
+import SessionCard from './components/SessionCard';
 
-interface SessionCardProps {
-    session: SessionData;
-    onViewDetails: (sessionId: string) => void;
+interface SessionData {
+    id: string;
+    title: string;
+    session_date: string;
+    start_time: string;
+    end_time: string;
+    venue_name: string;
+    venue_location: string;
+    player_level: string;
+    confirmed_players: number;
+    max_participants: number;
+    cost_per_person: number;
+    status: 'open' | 'closed';
+    join_status: 'pending' | 'confirmed';
+    host_name: string;
+    description: string;
+    host_level: string;
+    allow_cancellation: boolean;
+    cancellation_deadline_hours: number;
+    allow_modification: boolean;
+    modification_deadline_hours: number;
+    allow_guests: boolean;
+    guest_limit: number;
+    allow_waitlist: boolean;
+    waitlist_limit: number;
+    is_public: boolean;
+    pending_players: number;
+    participants: any[];
+    rules: string;
+    additional_property_1: string; // replace with actual property name and type
+    additional_property_2: string; // replace with actual property name and type
+    created_at: string;
+    updated_at: string;
 }
 
-const SessionCard = ({ session, onViewDetails }: SessionCardProps) => (
-    <Paper p="md" radius="md" withBorder>
-        <Group justify="space-between" wrap="nowrap">
-            <Group wrap="nowrap">
-                <div>
-                    <Group gap="xs">
-                        <Text fw={500}>{session.title}</Text>
-                        <Badge color={session.status === 'open' ? 'green' : 'yellow'}>
-                            {session.status}
-                        </Badge>
-                    </Group>
-                    <Group gap="xs">
-                        <IconCalendar size={14} />
-                        <Text size="sm" c="dimmed">
-                            {new Date(session.session_date).toLocaleDateString()}
-                        </Text>
-                        <Text size="sm" c="dimmed">•</Text>
-                        <IconClock size={14} />
-                        <Text size="sm" c="dimmed">
-                            {session.start_time} - {session.end_time}
-                        </Text>
-                    </Group>
-                    <Group gap="xs">
-                        <IconMapPin size={14} />
-                        <Text size="sm" c="dimmed">{session.venue_name}, {session.venue_location}</Text>
-                    </Group>
-                </div>
-            </Group>
-            <Stack gap="xs" align="flex-end">
-                <Badge variant="light">
-                    Player Level: {session.player_level}
-                </Badge>
-                <Badge variant="dot">
-                    {session.confirmed_players}/{session.max_participants} joined
-                </Badge>
-                {session.cost_per_person > 0 && (
-                    <Text size="sm">Cost: ฿{session.cost_per_person}</Text>
-                )}
-                <Button
-                    variant="light"
-                    size="xs"
-                    onClick={() => onViewDetails(session.id)}
-                >
-                    View Details
-                </Button>
-            </Stack>
-        </Group>
-    </Paper>
-);
-
 const SessionManagement = () => {
+    const router = useRouter();
     const [activeTab, setActiveTab] = useState<string>('joined');
-    const [sessions, setSessions] = useState<SessionData[]>([]);
+    const [joinSessions, setJoinSessions] = useState<SessionData[]>([]);
+    const [hostSessions, setHostSessions] = useState<SessionData[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-
-    useEffect(() => {
-        fetchSessions();
-    }, []);
 
     const fetchSessions = async () => {
         try {
             setLoading(true);
             setError(null);
 
-            const response: sessionResponseDTO | null = await sessionService.getMe();
-            if (response) {
-                setSessions(Array.isArray(response.data) ? response.data : []);
-                if (response.message) {
-                    notifications.show({
-                        message: response.message,
-                        color: 'green',
-                    });
-                }
-            } else {
-                throw new Error('No response from session service');
+            // Fetch joined sessions
+            const joinedResponse = await sessionService.getJoinedSessions();
+            if (joinedResponse?.data) {
+                setJoinSessions(Array.isArray(joinedResponse.data) ? joinedResponse.data : []);
             }
 
-            if (response.message) {
+            // Fetch hosted sessions
+            const hostedResponse = await sessionService.getHostedSessions();
+            if (hostedResponse?.data) {
+                setHostSessions(Array.isArray(hostedResponse.data) ? hostedResponse.data : []);
+            }
+
+            // Show success notification
+            if (joinedResponse?.message || hostedResponse?.message) {
                 notifications.show({
-                    message: response.message,
-                    color: 'green',
+                    message: 'Sessions loaded successfully',
+                    color: 'green'
                 });
             }
         } catch (err) {
             notifications.show({
                 title: 'Error',
                 message: 'Failed to load sessions',
-                color: 'red',
+                color: 'red'
             });
             setError('Failed to load sessions');
         } finally {
@@ -130,22 +108,17 @@ const SessionManagement = () => {
         }
     };
 
+    useEffect(() => {
+        fetchSessions();
+    }, []);
+
     const handleViewDetails = (sessionId: string) => {
-        // Implement navigation to session details
         console.log('View details for session:', sessionId);
     };
 
-    // Filter sessions based on active tab and join_status
-    const joinedSessions = sessions
-    const hostedSessions = sessions.filter(s => s.host_name === 'sarawut inpol');
-    const pendingSessions = sessions
+    const pendingSessions = joinSessions.filter(s => s.join_status === 'pending');
+    const confirmedSessions = joinSessions.filter(s => s.join_status === 'confirmed');
 
-    // Sort sessions by date
-    const sortedSessions = [...sessions].sort((a, b) =>
-        new Date(a.session_date).getTime() - new Date(b.session_date).getTime()
-    );
-
-    // Header Component remains the same...
     const HeaderSection = () => (
         <Box bg="blue.6" c="white" py={48}>
             <Container size="xl">
@@ -154,7 +127,7 @@ const SessionManagement = () => {
                         <Stack gap="lg">
                             <div>
                                 <Text size="xl" fw={500}>Manage Sessions</Text>
-                                <Title order={1}>Your Badminton Activities</Title>
+                                <Title order={1}>Your Badminton Parties</Title>
                             </div>
                             <Text size="lg">
                                 View and manage your sessions, track participation, and handle join requests.
@@ -200,44 +173,32 @@ const SessionManagement = () => {
                                 value="hosted"
                                 leftSection={<IconTarget size={16} />}
                                 rightSection={
-                                    hostedSessions.length > 0 && (
+                                    hostSessions.length > 0 && (
                                         <Badge size="xs" variant="filled">
-                                            {hostedSessions.length}
+                                            {hostSessions.length}
                                         </Badge>
                                     )
                                 }
                             >
                                 Hosted Sessions
                             </Tabs.Tab>
-                            <Tabs.Tab
-                                value="pending"
-                                leftSection={<IconUsers size={16} />}
-                                rightSection={
-                                    pendingSessions.length > 0 && (
-                                        <Badge size="xs" variant="filled" color="yellow">
-                                            {pendingSessions.length}
-                                        </Badge>
-                                    )
-                                }
-                            >
-                                Pending
-                            </Tabs.Tab>
                         </Tabs.List>
 
                         <Tabs.Panel value="joined" pt="md">
                             <Stack>
-                                {joinedSessions.map((session) => (
+                                {confirmedSessions.map((session) => (
                                     <SessionCard
                                         key={session.id}
                                         session={session}
                                         onViewDetails={handleViewDetails}
                                     />
                                 ))}
-                                {joinedSessions.length === 0 && (
+                                {confirmedSessions.length === 0 && (
                                     <Paper p="xl" radius="md" ta="center" c="dimmed">
                                         <IconCalendarEvent size={32} stroke={1.5} />
                                         <Text mt="md">You haven't joined any sessions yet</Text>
-                                        <Button variant="light" mt="md">
+                                        <Button variant="light" mt="md" onClick={() => router.push('/parties')}
+                                        >
                                             Find Sessions
                                         </Button>
                                     </Paper>
@@ -247,18 +208,18 @@ const SessionManagement = () => {
 
                         <Tabs.Panel value="hosted" pt="md">
                             <Stack>
-                                {hostedSessions.map((session) => (
+                                {hostSessions.map((session) => (
                                     <SessionCard
                                         key={session.id}
                                         session={session}
                                         onViewDetails={handleViewDetails}
                                     />
                                 ))}
-                                {hostedSessions.length === 0 && (
+                                {hostSessions.length === 0 && (
                                     <Paper p="xl" radius="md" ta="center" c="dimmed">
                                         <IconTarget size={32} stroke={1.5} />
                                         <Text mt="md">You haven't hosted any sessions</Text>
-                                        <Button variant="light" mt="md">
+                                        <Button variant="light" mt="md" onClick={() => router.push('/parties/create')}>
                                             Create Session
                                         </Button>
                                     </Paper>
@@ -286,7 +247,7 @@ const SessionManagement = () => {
                     </Tabs>
                 </Card>
             </Container>
-        </Box>
+        </Box >
     );
 };
 

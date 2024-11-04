@@ -23,6 +23,7 @@ import {
     List,
     ThemeIcon,
     rem,
+    ScrollArea
 } from '@mantine/core';
 import {
     IconMapPin,
@@ -37,11 +38,19 @@ import {
     IconProps,
     IconMoneybag,
     IconBarbell,
-    IconMessageCircle, IconEye, IconHeart, IconUsers, IconCreditCard
+    IconCheck,
+    IconX,
+    IconMessageCircle,
+    IconEye,
+    IconHeart,
+    IconUsers,
+    IconCreditCard
 } from '@tabler/icons-react';
+import { modals } from '@mantine/modals';
 import { useParams } from 'next/navigation';
+import { notifications } from '@mantine/notifications';
 
-import { SessionData, Participant, sessionService } from '@/services';
+import { sessionService } from '@/services';
 import ParticipantCard from './components/ParticipantCard';
 import SafetyGuidelines from './components/SafetyGuidelines';
 import MessageCard from './components/MessageCard';
@@ -49,15 +58,16 @@ import PartyHeader from './components/PartyHeader';
 import StatsGrid from './components/StatsGrid';
 import FeeCard from './components/FeeCard';
 import ParticipantsProgress from './components/ParticipantsProgress';
+import { SessionData } from '@/services/types/session';
+import SessionChat from './components/SessionChat';
 
-// Types
+type JoinStatus = 'host' | 'confirmed' | 'pending' | 'cancelled' | 'not_joined';
+
 interface Host {
     name: string;
     avatar: string;
     hostedParties: number;
 }
-
-
 
 interface Message {
     id: string;
@@ -69,30 +79,6 @@ interface Message {
     timestamp: string;
     likes: number;
 }
-
-interface PartyDetails {
-    id: string;
-    title: string;
-    location: string;
-    time: string;
-    description: string;
-    price: string;
-    participants: {
-        current: number;
-        max: number;
-    };
-    court: string;
-    level: string;
-    isJoined: boolean;
-    host: Host;
-    likes: number;
-    views: number;
-    status: string;
-}
-
-
-
-
 
 
 export const DEFAULT_PARTY_DATA: SessionData = {
@@ -118,8 +104,8 @@ export const DEFAULT_PARTY_DATA: SessionData = {
     participants: [],
     created_at: "",
     updated_at: "",
-}
-
+    join_status: "not_joined"
+};
 
 // Main Component
 const PartyView: React.FC = () => {
@@ -130,22 +116,208 @@ const PartyView: React.FC = () => {
     const [activeTab, setActiveTab] = useState<string>('chat');
     const [sessionDetails, setSessionDetails] = useState<SessionData>(DEFAULT_PARTY_DATA);
 
-
     const fetchSessionData = async () => {
         try {
-            const response = await sessionService.getById(sessionId)
-            setSessionDetails(response?.data || DEFAULT_PARTY_DATA)
-        }
-        catch (error) {
-            console.error(error
-            )
+            const response = await sessionService.getById(sessionId);
+            setSessionDetails(response?.data || DEFAULT_PARTY_DATA);
+        } catch (error) {
+            console.error(error);
         }
     };
 
     useEffect(() => {
         fetchSessionData();
-    }
-        , []);
+    }, []);
+    const getJoinButtonConfig = (status: string, joinStatus: JoinStatus) => {
+        // If session is cancelled
+        if (status === 'cancelled') {
+            return {
+                text: 'Session Cancelled',
+                color: 'gray' as const,
+                disabled: true,
+                variant: 'filled' as const
+            };
+        }
+
+        // Session is full
+        if (sessionDetails.participants.length >= sessionDetails.max_participants
+            && joinStatus === 'not_joined') {
+            return {
+                text: 'Session Full',
+                color: 'gray' as const,
+                disabled: true,
+                variant: 'filled' as const
+            };
+        }
+
+        // Different states based on join_status
+        switch (joinStatus) {
+            case 'host':
+                return {
+                    text: 'You are the Host',
+                    color: 'blue' as const,
+                    disabled: true,
+                    variant: 'filled' as const
+                };
+            case 'confirmed':
+                return {
+                    text: 'Leave Session',
+                    color: 'red' as const,
+                    disabled: false,
+                    variant: 'light' as const
+                };
+            case 'pending':
+                return {
+                    text: 'Pending Confirmation',
+                    color: 'yellow' as const,
+                    disabled: true,
+                    variant: 'filled' as const
+                };
+            case 'cancelled':  // เพิ่มกรณี cancelled
+                return {
+                    text: 'Cancelled',
+                    color: 'red' as const,
+                    disabled: true,
+                    variant: 'filled' as const
+                };
+            case 'not_joined':
+                return {
+                    text: 'Join Session',
+                    color: 'blue' as const,
+                    disabled: false,
+                    variant: 'filled' as const
+                };
+            default:
+                return {
+                    text: 'Join Session',
+                    color: 'blue' as const,
+                    disabled: false,
+                    variant: 'filled' as const
+                };
+        }
+    };
+
+    const handleActionClick = (sessionId: string, joinStatus: JoinStatus) => {
+        switch (joinStatus) {
+            case 'confirmed':
+                openLeaveConfirmModal(sessionId);
+                break;
+            case 'not_joined':
+                openJoinConfirmModal(sessionId);
+                break;
+        }
+    };
+
+    const openJoinConfirmModal = (sessionId: string) => {
+        modals.openConfirmModal({
+            title: 'Join Session',
+            centered: true,
+            children: (
+                <Text size="sm" mb="lg">
+                    Are you sure you want to join this session? You will be notified when the host confirms your participation.
+                </Text>
+            ),
+            labels: { confirm: 'Join Session', cancel: 'Cancel' },
+            confirmProps: { color: 'blue' },
+            onConfirm: () => handleJoin(sessionId),
+        });
+    };
+
+    const openLeaveConfirmModal = (sessionId: string) => {
+        modals.openConfirmModal({
+            title: 'Leave Session',
+            centered: true,
+            children: (
+                <>
+                    <Text size="sm" mb="xs" fw={500} c="red">
+                        Are you sure you want to leave this session?
+                    </Text>
+                    {sessionDetails.allow_cancellation ? (
+                        <Text size="sm" c="dimmed">
+                            You can cancel up to {sessionDetails.cancellation_deadline_hours} hours before the session starts.
+                        </Text>
+                    ) : (
+                        <Text size="sm" c="red">
+                            Note: This session does not allow cancellation after joining.
+                        </Text>
+                    )}
+                </>
+            ),
+            labels: { confirm: 'Leave Session', cancel: 'Stay' },
+            confirmProps: { color: 'red' },
+            cancelProps: { color: 'blue' },
+            onConfirm: () => handleLeave(sessionId),
+        });
+    };
+
+    const handleLeave = async (sessionId: string) => {
+        try {
+            notifications.show({
+                id: 'leave-loading',
+                title: 'Leaving session...',
+                message: 'Please wait while we process your request',
+                loading: true,
+                withCloseButton: false,
+                autoClose: false,
+            });
+
+            await sessionService.leave(sessionId);
+
+            notifications.hide('leave-loading');
+            notifications.show({
+                title: 'Session Left',
+                message: 'You have successfully left the session',
+                color: 'green',
+                icon: <IconCheck size={16} />,
+                autoClose: 3000,
+            });
+
+            await fetchSessionData();
+        } catch (error: any) {
+            notifications.hide('leave-loading');
+            notifications.show({
+                title: 'Failed to Leave',
+                message: error?.data?.description || 'Something went wrong. Please try again.',
+                color: 'red',
+                icon: <IconX size={16} />,
+                autoClose: 4000,
+            });
+        }
+    };
+
+    const handleJoin = async (sessionId: string) => {
+        try {
+            notifications.show({
+                id: 'join-loading',
+                title: 'Joining session...',
+                message: 'Please wait while we process your request',
+                loading: true,
+                withCloseButton: false,
+                autoClose: false,
+            });
+
+            await sessionService.join(sessionId);
+            notifications.hide('join-loading');
+            notifications.show({
+                title: 'Success',
+                message: 'Successfully joined the session',
+                color: 'green',
+                icon: <IconCheck size={16} />,
+                autoClose: 2000,
+            });
+
+            await fetchSessionData();
+        } catch (error: any) {
+            notifications.hide('join-loading');
+            notifications.show({
+                title: 'Error',
+                message: error?.data?.description || error?.message || 'Failed to join session',
+                color: 'red',
+                icon: <IconX size={16} />,
+                autoClose: 3000,
+            });
+        }
+    };
 
     const getStatusColor = (status: string) => {
         switch (status.toLowerCase()) {
@@ -159,6 +331,7 @@ const PartyView: React.FC = () => {
                 return 'blue';
         }
     };
+
     const formatDateTime = (date: string | Date, start: string, end: string): string => {
         const options: Intl.DateTimeFormatOptions = {
             day: 'numeric',
@@ -168,29 +341,7 @@ const PartyView: React.FC = () => {
         const formattedDate = new Date(date).toLocaleDateString('th-TH', options);
         return `${formattedDate}\n${start} - ${end} น.`;
     };
-    const partyDetails: PartyDetails = {
-        id: "0405f815-1a23-4c46-b89a-53c940b7d684",
-        title: "Evening Badminton Session",
-        location: "Bangkok",
-        time: ``,
-        description: "Friendly doubles matches for intermediate players",
-        price: `$${15}/person`,
-        participants: {
-            current: 0,
-            max: 4
-        },
-        court: "Updated Court Name",
-        level: "intermediate",
-        isJoined: false,
-        host: {
-            name: "John Doe",
-            avatar: '/api/placeholder/32/32',
-            hostedParties: 0,
-        },
-        likes: 0,
-        views: 0,
-        status: "cancelled"
-    };
+
     const messages: Message[] = [
         {
             id: '1',
@@ -200,9 +351,6 @@ const PartyView: React.FC = () => {
             likes: 0,
         },
     ];
-
-
-
 
     return (
         <Box bg="gray.0" mih="100vh">
@@ -222,7 +370,7 @@ const PartyView: React.FC = () => {
 
                 <Grid gutter="lg">
                     <Grid.Col span={{ base: 12, md: 8 }}>
-
+                        {/* Main Content Card */}
                         <Card shadow="sm" radius="lg" p={0} withBorder className="overflow-hidden">
                             <PartyHeader
                                 party={sessionDetails}
@@ -250,6 +398,7 @@ const PartyView: React.FC = () => {
                                 </Badge>
                             </Box>
 
+                            {/* Content Sections */}
                             <Stack p="xl" gap="xl">
                                 {/* Info Grid */}
                                 <Grid gutter="lg">
@@ -266,7 +415,6 @@ const PartyView: React.FC = () => {
                                             value: formatDateTime(sessionDetails.session_date, sessionDetails.start_time, sessionDetails.end_time),
                                             color: 'blue'
                                         },
-
                                     ].map((item, index) => (
                                         <Grid.Col span={{ base: 12, sm: 6, md: 6 }} key={index}>
                                             <Paper
@@ -333,80 +481,48 @@ const PartyView: React.FC = () => {
                                 </Box>
                             </Stack>
                         </Card>
-                        <Card shadow="sm" radius="lg" withBorder className="overflow-hidden">
-                            <Tabs
-                                value={activeTab}
-                                onChange={(value) => setActiveTab(value || 'chat')}
-                                classNames={{
-                                    list: 'bg-gray-50 px-4 pt-2',
-                                    tab: 'font-medium transition-colors data-[active]:bg-white data-[active]:border-b-2 data-[active]:border-blue-500'
-                                }}
-                            >
+                        <Card shadow="sm" radius="md" withBorder mt="md">
+                            <Tabs defaultValue="chat">
                                 <Tabs.List>
                                     <Tabs.Tab
                                         value="chat"
-                                        leftSection={<IconMessageCircle size={18} />}
-                                        className="px-4 py-2"
+                                        leftSection={<IconMessageCircle size={16} />}
                                     >
                                         Chat
                                     </Tabs.Tab>
                                     <Tabs.Tab
                                         value="participants"
-                                        leftSection={<IconUsers size={18} />}
-                                        className="px-4 py-2"
+                                        leftSection={<IconUsers size={16} />}
                                     >
-                                        Participants ({sessionDetails.participants.length})
+                                        Participants
                                     </Tabs.Tab>
                                 </Tabs.List>
 
-                                <Tabs.Panel value="chat" p="md">
-                                    <Stack gap="lg">
-                                        {messages.map((msg) => (
-                                            <MessageCard key={msg.id} message={msg} />
-                                        ))}
-                                        <Group className="sticky bottom-0 bg-white pt-3">
-                                            <TextInput
-                                                placeholder="Type a message..."
-                                                value={message}
-                                                onChange={(e) => setMessage(e.target.value)}
-                                                className="flex-1"
-                                                size="md"
-                                                radius="xl"
-                                                rightSection={
-                                                    <ActionIcon
-                                                        variant="filled"
-                                                        color="blue"
-                                                        size={32}
-                                                        radius="xl"
-                                                        className="hover:scale-105 transition-transform"
-                                                    >
-                                                        <IconSend size={18} />
-                                                    </ActionIcon>
-                                                }
-                                            />
-                                        </Group>
-                                    </Stack>
+                                <Tabs.Panel value="chat" >
+                                    <SessionChat sessionId={sessionId} />
+
                                 </Tabs.Panel>
 
-                                <Tabs.Panel value="participants" p="md">
-                                    <Stack gap="xs">
-                                        {sessionDetails.participants.map((participant) => (
-                                            <ParticipantCard
-                                                key={participant.id}
-                                                participant={participant}
-                                            />
-                                        ))}
-                                    </Stack>
+                                <Tabs.Panel value="participants" >
+                                    <ScrollArea h={400} offsetScrollbars>
+                                        <Stack gap="xs" p="md">
+                                            {sessionDetails.participants.map((participant) => (
+                                                <ParticipantCard participant={participant} />
+                                            ))}
+                                        </Stack>
+                                    </ScrollArea>
                                 </Tabs.Panel>
                             </Tabs>
                         </Card>
+
                     </Grid.Col>
 
+                    {/* Sidebar */}
                     <Grid.Col span={{ base: 12, md: 4 }}>
                         <Card shadow="sm" radius="md" withBorder>
                             <Card.Section p="md" bg="blue.0">
                                 <Group>
-                                    <Avatar src={partyDetails.host.avatar} size="lg" radius="md" />
+                                    <Avatar src="/api/placeholder/32/32" size="lg" radius="md" />
                                     <div>
                                         <Badge
                                             leftSection={<IconCrown size={12} />}
@@ -415,9 +531,9 @@ const PartyView: React.FC = () => {
                                         >
                                             Host
                                         </Badge>
-                                        <Text fw={500}>{partyDetails.host.name}</Text>
+                                        <Text fw={500}>{sessionDetails.host_name}</Text>
                                         <Text size="sm" c="dimmed">
-                                            {partyDetails.host.hostedParties} parties hosted
+                                            {sessionDetails.host_level} Level
                                         </Text>
                                     </div>
                                 </Group>
@@ -430,27 +546,24 @@ const PartyView: React.FC = () => {
                                 />
 
                                 <StatsGrid
-                                    views={partyDetails.views}
-                                    likes={partyDetails.likes}
+                                    views={0}
+                                    likes={0}
                                 />
 
-                                <FeeCard price={partyDetails.price} />
+                                <FeeCard price={`฿${sessionDetails.cost_per_person}/person`} />
 
+                                {/* Join/Leave Button */}
                                 <Button
                                     size="lg"
-                                    color={sessionDetails.status === 'cancelled' ? 'gray' : partyDetails.isJoined ? 'red' : 'blue'}
-                                    variant={partyDetails.isJoined ? 'light' : 'filled'}
-                                    disabled={sessionDetails.status === 'cancelled'}
+                                    {...getJoinButtonConfig(sessionDetails.status, sessionDetails.join_status)}
                                     radius="md"
+                                    onClick={() => handleActionClick(sessionDetails.id, sessionDetails.join_status)}
                                     className="transform transition-all duration-200 hover:-translate-y-1 active:translate-y-0 disabled:hover:transform-none"
                                 >
-                                    {sessionDetails.status === 'cancelled' ? (
-                                        <Group gap="xs"><IconUsers size={18} />Session Cancelled</Group>
-                                    ) : partyDetails.isJoined ? (
-                                        <Group gap="xs"><IconUsers size={18} />Leave Party</Group>
-                                    ) : (
-                                        <Group gap="xs"><IconUsers size={18} />Join Party</Group>
-                                    )}
+                                    <Group gap="xs">
+                                        <IconUsers size={18} />
+                                        {getJoinButtonConfig(sessionDetails.status, sessionDetails.join_status).text}
+                                    </Group>
                                 </Button>
 
                                 <Button
@@ -465,8 +578,7 @@ const PartyView: React.FC = () => {
 
                                 <SafetyGuidelines />
 
-
-
+                                {/* Share Section */}
                                 <Paper p="md" radius="md" withBorder>
                                     <Text fw={500} mb="md">Share This Party</Text>
                                     <Group grow>

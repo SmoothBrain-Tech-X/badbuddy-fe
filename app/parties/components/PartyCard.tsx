@@ -119,7 +119,7 @@ const PartyCard: React.FC<{ party: Session; onJoinLeave: () => Promise<void> }> 
                         </Text>
                     </Group>
                     <Grid>
-                        <Grid.Col span={6}>
+                        {/* <Grid.Col span={6}>
                             <Button
                                 fullWidth
                                 variant={isJoined ? 'light' : 'filled'}
@@ -129,8 +129,8 @@ const PartyCard: React.FC<{ party: Session; onJoinLeave: () => Promise<void> }> 
                             >
                                 {isJoined ? 'Leave Party' : 'Join Party'}
                             </Button>
-                        </Grid.Col>
-                        <Grid.Col span={6}>
+                        </Grid.Col> */}
+                        <Grid.Col span={12}>
                             <Button
                                 fullWidth
                                 variant="light"
