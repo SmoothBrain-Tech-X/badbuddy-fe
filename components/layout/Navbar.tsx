@@ -135,7 +135,8 @@ const Navbar = () => {
       <LoadingOverlay
         visible={isNavigating || isLoading}
         zIndex={1000}
-        overlayProps={{ blur: 2 }}
+        overlayProps={{ radius: 'sm', blur: 5 }}
+        loaderProps={{ color: 'blue', type: 'bars' }}
       />
 
       <Modal
@@ -214,6 +215,7 @@ const Navbar = () => {
             </ActionIcon>
 
             <Button
+              variant="gradient"
               leftSection={<IconPlus size={20} />}
               visibleFrom="sm"
               onClick={handleCreateParty}
@@ -318,7 +320,12 @@ const Navbar = () => {
 
             <Divider my="sm" />
 
-            <Button leftSection={<IconPlus size={20} />} fullWidth onClick={handleCreateParty}>
+            <Button
+              variant="gradient"
+              leftSection={<IconPlus size={20} />}
+              fullWidth
+              onClick={handleCreateParty}
+            >
               Create Party
             </Button>
 
