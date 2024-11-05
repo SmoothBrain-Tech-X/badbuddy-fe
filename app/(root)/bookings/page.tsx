@@ -30,6 +30,7 @@ import {
 import { notifications } from '@mantine/notifications';
 import { Booking, bookingService } from '@/services';
 import CancelBookingModal from './components/CancelBookingModal';
+import { useRouter } from 'next/navigation';
 
 interface BookingStats {
   total: number;
@@ -68,7 +69,7 @@ export default function BookingManagement() {
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
   const [cancelLoading, setCancelLoading] = useState(false);
-
+  const router = useRouter();
   const fetchBookings = async () => {
     try {
       const response = await bookingService.getMyBooking();
@@ -384,6 +385,7 @@ export default function BookingManagement() {
                           message="No upcoming bookings"
                           actionLabel="Book a Court"
                           onAction={() => {
+                            router.push('/venues');
                             /* Add your navigation logic */
                           }}
                         />

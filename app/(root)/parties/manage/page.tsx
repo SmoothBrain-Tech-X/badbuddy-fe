@@ -113,6 +113,8 @@ const SessionManagement = () => {
     }, []);
 
     const handleViewDetails = (sessionId: string) => {
+        // Redirect to session details page
+        router.push(`/parties/${sessionId}`);
         console.log('View details for session:', sessionId);
     };
 

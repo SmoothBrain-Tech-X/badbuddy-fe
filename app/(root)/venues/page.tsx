@@ -67,6 +67,7 @@ interface ApiVenue extends BaseVenue {
   image_urls: string;
   rating?: number;
   total_reviews?: number;
+  courts: any[];
   price_range?: string;
   court_count?: number;
   distance?: string;
@@ -136,7 +137,7 @@ const venueService = {
     rating: apiVenue.rating || 0,
     totalReviews: apiVenue.total_reviews || 0,
     priceRange: `฿${apiVenue.price_range || '0'}/hour`,
-    courtCount: apiVenue.court_count || 0,
+    courtCount: apiVenue.courts.length || 0,
     facilities: apiVenue.facilities || [],
     openHours: `${new Date(apiVenue.open_time).toLocaleTimeString()} - ${new Date(apiVenue.close_time).toLocaleTimeString()}`,
     distance: apiVenue.distance || 'N/A',
