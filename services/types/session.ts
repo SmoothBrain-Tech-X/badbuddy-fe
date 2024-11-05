@@ -8,6 +8,7 @@ export interface Session extends BaseEntity {
   venue_name: string;
   venue_location: string;
   host_name: string;
+  host_gender: string;
   host_level: string;
   session_date: string;
   start_time: string;

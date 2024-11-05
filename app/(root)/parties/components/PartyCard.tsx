@@ -41,6 +41,17 @@ const PartyCard: React.FC<{ party: Session; onJoinLeave: () => Promise<void> }> 
     minute: '2-digit',
   });
 
+  const avatarUrl = (): string => {
+    switch (party.host_gender) {
+      case 'female':
+        return 'https://raw.githubusercontent.com/Ashwinvalento/cartoon-avatar/master/lib/images/female/5.png';
+      case 'male':
+        return 'https://raw.githubusercontent.com/Ashwinvalento/cartoon-avatar/master/lib/images/female/68.png';
+      default:
+        return 'https://raw.githubusercontent.com/Ashwinvalento/cartoon-avatar/master/lib/images/male/86.png';
+    }
+  };
+
   return (
     <Card withBorder h="100%">
       <Stack>
@@ -48,7 +59,7 @@ const PartyCard: React.FC<{ party: Session; onJoinLeave: () => Promise<void> }> 
           <Group>
             <Box pos="relative">
               <Avatar
-                src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8YXZhdGFyfGVufDB8fDB8fHww"
+                src={avatarUrl()}
                 size="lg"
                 radius="md"
               />
